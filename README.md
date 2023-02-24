@@ -1,0 +1,2 @@
+# SnapScrollerPlugin
+一個Unity的自動定位卷軸插件
