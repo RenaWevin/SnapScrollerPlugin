@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RW.UI.SnapScroller {
@@ -15,7 +16,7 @@ namespace RW.UI.SnapScroller {
 
         /// <summary>
         /// Scroll directions
-        /// 滑動方向
+        /// 捲動方向
         /// </summary>
         private enum ScrollDirection {
             /// <summary>水平</summary>
@@ -64,18 +65,21 @@ namespace RW.UI.SnapScroller {
 
         //Content的RT
         private RectTransform m_contentRectTrans;
+        //Content的layoutGroup
+        private HorizontalOrVerticalLayoutGroup m_layoutGroup;
+        private ContentSizeFitter m_contentSizeFitter;
 
         #endregion
         #region Private Variables - 私有參數
 
         /// <summary>
-        /// 取得/設定Scroll位置
+        /// 取得/設定Scroll位置，0:左/上，1:右/下
         /// </summary>
         private float ScrollPosition {
             get {
                 if (m_scrollRect) {
                     if (scrollDirection == ScrollDirection.Vertical) {
-                        return m_scrollRect.verticalNormalizedPosition;
+                        return 1f - m_scrollRect.verticalNormalizedPosition;
                     } else {
                         return m_scrollRect.horizontalNormalizedPosition;
                     }
@@ -86,7 +90,7 @@ namespace RW.UI.SnapScroller {
             set {
                 if (m_scrollRect) {
                     if (scrollDirection == ScrollDirection.Vertical) {
-                        m_scrollRect.verticalNormalizedPosition = value;
+                        m_scrollRect.verticalNormalizedPosition = 1f - value;
                     } else {
                         m_scrollRect.horizontalNormalizedPosition = value;
                     }
@@ -94,9 +98,32 @@ namespace RW.UI.SnapScroller {
             }
         }
 
+        //Content的母物件大小
+        private Vector2 parentContainerSize;
+        //Content的母物件邊長(依據捲動方向)
+        private float parentContainerSideLength {
+            get {
+                if (scrollDirection == ScrollDirection.Horizontal) {
+                    //橫向-X
+                    return parentContainerSize.x;
+                } else {
+                    //直向-Y
+                    return parentContainerSize.y;
+                }
+            }
+        }
+
+        //Content大小
+        private Vector2 contentSize { get {
+                return m_contentRectTrans.rect.size;
+        } }
+
         #endregion
         #region Parameters - 可調整參數
 
+        /// <summary>
+        /// 捲動方向
+        /// </summary>
         [SerializeField]
         private ScrollDirection scrollDirection;
 
@@ -105,8 +132,25 @@ namespace RW.UI.SnapScroller {
         [SerializeField]
         private float spacing = 50f;
 
+        /// <summary>
+        /// Resizing methods for cells.
+        /// 不同的縮放cell方式。
+        /// </summary>
         [SerializeField]
-        private CellResizeType cellResizeType;
+        private CellResizeType cellResizeType = CellResizeType.Scale;
+        /// <summary>
+        /// LocalScale of cells when it's on focus.
+        /// 被選中時，Cell的LocalScale。
+        /// </summary>
+        [SerializeField]
+        private Vector2 cellScaleForOnFocus = Vector2.one;
+        /// <summary>
+        /// LocalScale of cells when they're not on focus.
+        /// 未被選中的Cell的LocalScale。
+        /// </summary>
+        [SerializeField]
+        private Vector2 cellScaleForOthers = Vector2.one * 0.8f;
+
         [SerializeField]
         private CellPositionType cellPositionType;
 
@@ -127,6 +171,11 @@ namespace RW.UI.SnapScroller {
             m_scrollRect = this.GetComponent<ScrollRectWithDragState>();
 
             InitContent();
+            InitCells();
+        }
+
+        private void Start() {
+            
         }
 
         #region  -> InitContent
@@ -142,7 +191,9 @@ namespace RW.UI.SnapScroller {
             }
             //生成Content
             var contentInstObj = new GameObject("Content_OfSnapScroller");
+            //新增RectTransform
             m_contentRectTrans = contentInstObj.AddComponent<RectTransform>();
+            //取得母物件容器大小
             Vector2 parentSize;
             if (m_scrollRect.viewport != null) {
                 m_contentRectTrans.SetParent(m_scrollRect.viewport);
@@ -151,13 +202,14 @@ namespace RW.UI.SnapScroller {
                 m_contentRectTrans.SetParent(m_rectTransform);
                 parentSize = new Vector2(m_rectTransform.rect.width, m_rectTransform.rect.height);
             }
-            //調整Content大小
-            Vector2 newSize = (snapScrollerCellTemplate.GetRectTransformSize + Vector2.one * spacing) * (testCellCount - 1) + parentSize;
-            if (scrollDirection == ScrollDirection.Horizontal) {
-                m_contentRectTrans.sizeDelta = new Vector2(Mathf.Max(newSize.x, parentSize.x), parentSize.y);
-            } else {
-                m_contentRectTrans.sizeDelta = new Vector2(parentSize.x, Mathf.Max(newSize.x, parentSize.y));
-            }
+            parentContainerSize = parentSize;
+            ////調整Content大小 (改以ContentSizeFitter處理)
+            //Vector2 newSize = (snapScrollerCellTemplate.rectTransform.rect.size + Vector2.one * spacing) * (testCellCount - 1) + parentSize;
+            //if (scrollDirection == ScrollDirection.Horizontal) {
+            //    m_contentRectTrans.sizeDelta = new Vector2(Mathf.Max(newSize.x, parentSize.x), parentSize.y);
+            //} else {
+            //    m_contentRectTrans.sizeDelta = new Vector2(parentSize.x, Mathf.Max(newSize.y, parentSize.y));
+            //}
             //設定Content
             m_scrollRect.content = m_contentRectTrans;
             //位置重設
@@ -171,6 +223,27 @@ namespace RW.UI.SnapScroller {
             m_contentRectTrans.anchorMax = anchorAndPivot;
             m_contentRectTrans.pivot = anchorAndPivot;
             m_contentRectTrans.anchoredPosition = Vector2.zero;
+            //設定ContentSizeFitter
+            var contentSizeFitter = m_contentSizeFitter = contentInstObj.AddComponent<ContentSizeFitter>();
+            if (scrollDirection == ScrollDirection.Horizontal) {
+                contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            } else {
+                contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            }
+            //設定LayoutGroup
+            HorizontalOrVerticalLayoutGroup layoutGroup = m_layoutGroup = (scrollDirection == ScrollDirection.Horizontal)
+                ? contentInstObj.AddComponent<HorizontalLayoutGroup>()
+                : contentInstObj.AddComponent<VerticalLayoutGroup>();
+            layoutGroup.spacing = this.spacing;
+            if (scrollDirection == ScrollDirection.Horizontal) {
+                layoutGroup.padding.left = layoutGroup.padding.right = (int)((parentContainerSideLength - snapScrollerCellTemplate.GetRectTransformSize.x) / 2f);
+            } else {
+                layoutGroup.padding.top = layoutGroup.padding.bottom = (int)((parentContainerSideLength - snapScrollerCellTemplate.GetRectTransformSize.y) / 2f);
+            }
+            layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+            layoutGroup.childControlWidth = layoutGroup.childControlHeight = false;
+            layoutGroup.childScaleWidth = layoutGroup.childScaleHeight = true;
+            layoutGroup.childForceExpandWidth = layoutGroup.childForceExpandHeight = false;
         }
 
         #endregion
@@ -180,7 +253,46 @@ namespace RW.UI.SnapScroller {
         /// 初始化Cells
         /// </summary>
         private void InitCells() {
+            //隱藏template
+            snapScrollerCellTemplate.rectTransform.localPosition = new Vector2(3939, 39393);
+            snapScrollerCellTemplate.gameObject.SetActive(false);
 
+            //計算每個Cell的NormalizedPosition
+            if (testCellCount > 1) {
+                //只有按鈕超過2個時才作用
+                pos = new float[testCellCount];
+                distance = 1f / (pos.Length - 1);
+                for (int i = 0; i < pos.Length; i++) {
+                    pos[i] = distance * i;
+                }
+            } else {
+                pos = new float[1] { 0f };
+            }
+
+            scrollerCells.Clear();
+            float totalLength = (testCellCount-1) * (snapScrollerCellTemplate.rectTransform.rect.width + spacing);
+            for (int i = 0; i < testCellCount; i++) {
+                //生成
+                var c = GameObject.Instantiate(snapScrollerCellTemplate, m_contentRectTrans);
+                ////決定位置
+                //c.rectTransform.anchoredPosition = new Vector2(
+                //    (pos[i] - 0.5f) * totalLength
+                //    , 0);
+                //註冊事件
+                int j = i;
+                c.button.onClick.AddListener(delegate { OnClickBtn_Index(j); });
+                c.SetText($"Data {j}");
+                //顯示
+                c.gameObject.SetActive(true);
+                //登錄進列表中
+                scrollerCells.Add(c);
+            }
+
+            //更新Layout
+            UpdateDisplay_ResizeCells(immediately: true);
+            UpdateDisplay_SetLayout(onlyLayout: false);
+
+            ScrollPosition = 0f;
         }
 
         #endregion
@@ -200,14 +312,14 @@ namespace RW.UI.SnapScroller {
 
         #endregion
 
-
+        /// <summary>
+        /// 測試用生成數量
+        /// </summary>
         [Space(50)]
-        [SerializeField]
-        private SnapScrollerCell[] scrollerCells;
         [SerializeField]
         private int testCellCount = 5;
 
-        float scroll_pos = 0f;
+        private readonly List<SnapScrollerCell> scrollerCells = new List<SnapScrollerCell>();
         float[] pos = { 0f };
         float distance;
 
@@ -217,30 +329,15 @@ namespace RW.UI.SnapScroller {
         //目前選擇的按鈕是幾號
         public int nowSelectedIndex = 0;
 
-        void Start() {
-            if (scrollerCells.Length > 1) {
-                //只有按鈕超過2個時才作用
-                pos = new float[scrollerCells.Length];
-                distance = 1f / (pos.Length - 1);
-                for (int i = 0; i < pos.Length; i++) {
-                    pos[i] = distance * i;
-                }
-            }
-            for (int i = 0; i < scrollerCells.Length; i++) {
-                int j = i;
-                scrollerCells[i].button.onClick.AddListener(delegate { OnClickBtn_Index(j); });
-            }
-        }
 
         void Update() {
 
-            if (scrollerCells.Length > 1) {
+            if (scrollerCells.Count > 1) {
                 //只有按鈕超過2個時才作用
 
                 //處理移動
                 if (m_scrollRect.IsDrag) {
                     targetIndex = -1; //中斷點擊移動
-                    scroll_pos = ScrollPosition;
                 } else {
                     if (targetIndex >= 0) {
                         //根據點擊的移動
@@ -252,7 +349,7 @@ namespace RW.UI.SnapScroller {
                             targetIndex = -1;
                         } else {
                             //移動
-                            scroll_pos = ScrollPosition = Mathf.Lerp(ScrollPosition, pos[targetIndex], moveSpeed);
+                            ScrollPosition = Mathf.Lerp(ScrollPosition, pos[targetIndex], moveSpeed);
                         }
                     } else {
                         //放開時的移動
@@ -269,25 +366,80 @@ namespace RW.UI.SnapScroller {
                 }
             }
 
-            for (int i = 0; i < pos.Length; i++) {
-                if (IsScrollPosInIndex(i)) {
-                    //這個編號就是目前的位置
-                    nowSelectedIndex = i;
-                    scrollerCells[i].transform.localScale = Vector2.Lerp(scrollerCells[i].GetTransformLocalScale, Vector2.one, moveSpeed);
-                } else {
-                    scrollerCells[i].transform.localScale = Vector2.Lerp(scrollerCells[i].GetTransformLocalScale, Vector2.one * 0.8f, moveSpeed);
+            //縮放大小
+            UpdateDisplay_ResizeCells(false);
+            UpdateDisplay_SetLayout(onlyLayout: true);
+
+        }
+
+        #region UpdateDisplay
+
+        /// <summary>
+        /// 計算縮放大小
+        /// </summary>
+        /// <param name="immediately">直接變成目標大小</param>
+        private void UpdateDisplay_ResizeCells(bool immediately) {
+
+            if (cellResizeType != CellResizeType.None) {
+                for (int i = 0; i < pos.Length; i++) {
+                    if (IsScrollPosInIndex(i)) {
+                        //這個編號就是目前的位置
+                        nowSelectedIndex = i;
+                        switch (cellResizeType) {
+                            case CellResizeType.Scale:
+                                if (immediately) {
+                                    scrollerCells[i].transform.localScale = cellScaleForOnFocus;
+                                } else {
+                                    scrollerCells[i].transform.localScale = Vector2.Lerp(scrollerCells[i].GetResizeRectTransformLocalScale, cellScaleForOnFocus, moveSpeed);
+                                }
+                                break;
+                            case CellResizeType.WidthAndHeight:
+                                break;
+                        }
+                    } else {
+                        switch (cellResizeType) {
+                            case CellResizeType.Scale:
+                                if (immediately) {
+                                    scrollerCells[i].transform.localScale = cellScaleForOthers;
+                                } else {
+                                    scrollerCells[i].transform.localScale = Vector2.Lerp(scrollerCells[i].GetResizeRectTransformLocalScale, cellScaleForOthers, moveSpeed);
+                                }
+                                break;
+                            case CellResizeType.WidthAndHeight:
+                                break;
+                        }
+                    }
                 }
             }
+
         }
+
+        /// <summary>
+        /// 更新Layout物件
+        /// </summary>
+        private void UpdateDisplay_SetLayout(bool onlyLayout) {
+
+            if (scrollDirection == ScrollDirection.Horizontal) {
+                if (!onlyLayout) m_layoutGroup.CalculateLayoutInputHorizontal();
+                m_layoutGroup.SetLayoutHorizontal();
+                if (!onlyLayout) m_contentSizeFitter.SetLayoutHorizontal();
+            } else {
+                if (!onlyLayout) m_layoutGroup.CalculateLayoutInputVertical();
+                m_layoutGroup.SetLayoutVertical();
+                if (!onlyLayout) m_contentSizeFitter.SetLayoutVertical();
+            }
+
+        }
+
+        #endregion
 
         private bool IsScrollPosInIndex(int target) {
             if ((target < 0) || (target >= pos.Length)) {
                 //錯誤
                 return false;
             }
-
-            return (target == pos.Length-1 || (scroll_pos <= (pos[target] + (distance / 2))))
-                    && (target == 0 || (scroll_pos > (pos[target] - (distance / 2))));
+            return (target == pos.Length-1 || (ScrollPosition <= (pos[target] + (distance / 2))))
+                    && (target == 0 || (ScrollPosition > (pos[target] - (distance / 2))));
         }
 
         private void OnClickBtn_Index(int index) {
