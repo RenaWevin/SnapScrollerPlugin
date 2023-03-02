@@ -154,8 +154,14 @@ namespace RW.UI.SnapScroller {
         [SerializeField]
         private CellPositionType cellPositionType;
 
-        [SerializeField, Range(0f, 1f)]
-        private float moveSpeed = 0.05f;
+        [SerializeField, Range(5f, 100f)]
+        private float moveSpeed = 10f;
+
+        private float LerpSpeed {
+            get {
+                return Mathf.Min(1f, Mathf.Max(0f, moveSpeed * Time.deltaTime));
+            }
+        }
 
         #endregion
 
@@ -202,6 +208,7 @@ namespace RW.UI.SnapScroller {
                 m_contentRectTrans.SetParent(m_rectTransform);
                 parentSize = new Vector2(m_rectTransform.rect.width, m_rectTransform.rect.height);
             }
+            m_contentRectTrans.localScale = Vector3.one;
             parentContainerSize = parentSize;
             ////調整Content大小 (改以ContentSizeFitter處理)
             //Vector2 newSize = (snapScrollerCellTemplate.rectTransform.rect.size + Vector2.one * spacing) * (testCellCount - 1) + parentSize;
@@ -332,6 +339,11 @@ namespace RW.UI.SnapScroller {
 
         void Update() {
 
+            //檢查離開鍵
+            if (Input.GetKeyDown(KeyCode.Escape)) {
+                Application.Quit();
+            }
+
             if (scrollerCells.Count > 1) {
                 //只有按鈕超過2個時才作用
 
@@ -349,7 +361,7 @@ namespace RW.UI.SnapScroller {
                             targetIndex = -1;
                         } else {
                             //移動
-                            ScrollPosition = Mathf.Lerp(ScrollPosition, pos[targetIndex], moveSpeed);
+                            ScrollPosition = Mathf.Lerp(ScrollPosition, pos[targetIndex], LerpSpeed);
                         }
                     } else {
                         //放開時的移動
@@ -358,7 +370,7 @@ namespace RW.UI.SnapScroller {
                                 if (Mathf.Abs(ScrollPosition - pos[i]) < 1E-3f) {
                                     ScrollPosition = pos[i];
                                 } else {
-                                    ScrollPosition = Mathf.Lerp(ScrollPosition, pos[i], moveSpeed);
+                                    ScrollPosition = Mathf.Lerp(ScrollPosition, pos[i], LerpSpeed);
                                 }
                             }
                         }
@@ -390,7 +402,7 @@ namespace RW.UI.SnapScroller {
                                 if (immediately) {
                                     scrollerCells[i].transform.localScale = cellScaleForOnFocus;
                                 } else {
-                                    scrollerCells[i].transform.localScale = Vector2.Lerp(scrollerCells[i].GetResizeRectTransformLocalScale, cellScaleForOnFocus, moveSpeed);
+                                    scrollerCells[i].transform.localScale = Vector2.Lerp(scrollerCells[i].GetResizeRectTransformLocalScale, cellScaleForOnFocus, LerpSpeed);
                                 }
                                 break;
                             case CellResizeType.WidthAndHeight:
@@ -402,7 +414,7 @@ namespace RW.UI.SnapScroller {
                                 if (immediately) {
                                     scrollerCells[i].transform.localScale = cellScaleForOthers;
                                 } else {
-                                    scrollerCells[i].transform.localScale = Vector2.Lerp(scrollerCells[i].GetResizeRectTransformLocalScale, cellScaleForOthers, moveSpeed);
+                                    scrollerCells[i].transform.localScale = Vector2.Lerp(scrollerCells[i].GetResizeRectTransformLocalScale, cellScaleForOthers, LerpSpeed);
                                 }
                                 break;
                             case CellResizeType.WidthAndHeight:
