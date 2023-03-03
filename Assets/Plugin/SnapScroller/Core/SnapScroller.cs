@@ -38,25 +38,6 @@ namespace RW.UI.SnapScroller {
             WidthAndHeight
         }
 
-        /// <summary>
-        /// The calculation type for the position of cells.
-        /// 處理cell位置的計算方式。
-        /// </summary>
-        private enum CellPositionType {
-            /// <summary>
-            /// Fixing the spacing between each cell,
-            /// but there may be positional offsets due to resizing.
-            /// 固定每個cell的間距，但是會因為縮放推擠造成位置偏移。
-            /// </summary>
-            FixedSpacing,
-            /// <summary>
-            /// Fixing the position of each cell,
-            /// but there may be uneven spacing due to resizing.
-            /// 固定每個cell的位置，但是會因為縮放而導致間距不一。
-            /// </summary>
-            FixedPosition,
-        }
-
         #endregion
         #region Private Objects - 私有物件
 
@@ -157,9 +138,6 @@ namespace RW.UI.SnapScroller {
         [SerializeField]
         private Vector2 cellScaleForOthers = Vector2.one * 0.8f;
 
-        [SerializeField]
-        private CellPositionType cellPositionType;
-
         [SerializeField, Range(5f, 100f)]
         private float moveSpeed = 10f;
 
@@ -182,6 +160,7 @@ namespace RW.UI.SnapScroller {
             m_rectTransform = this.GetComponent<RectTransform>();
             m_scrollRect = this.GetComponent<ScrollRectWithDragState>();
 
+            InitCellObjectPool();
             InitContent();
             InitCells();
         }
@@ -207,13 +186,12 @@ namespace RW.UI.SnapScroller {
             m_contentRectTrans = contentInstObj.AddComponent<RectTransform>();
             //取得母物件容器大小
             if (m_scrollRect.viewport != null) {
-                m_contentRectTrans.SetParent(m_scrollRect.viewport);
+                m_contentRectTrans.SetParent(m_scrollRect.viewport, false);
                 parentContainerRectTransform = m_scrollRect.viewport;
             } else {
-                m_contentRectTrans.SetParent(m_rectTransform);
+                m_contentRectTrans.SetParent(m_rectTransform, false);
                 parentContainerRectTransform = m_rectTransform;
             }
-            m_contentRectTrans.localScale = Vector3.one;
             ////調整Content大小 (改以ContentSizeFitter處理)
             //Vector2 newSize = (snapScrollerCellTemplate.rectTransform.rect.size + Vector2.one * spacing) * (testCellCount - 1) + parentSize;
             //if (scrollDirection == ScrollDirection.Horizontal) {
@@ -291,7 +269,7 @@ namespace RW.UI.SnapScroller {
             float totalLength = (testCellCount-1) * (snapScrollerCellTemplate.rectTransform.rect.width + spacing);
             for (int i = 0; i < testCellCount; i++) {
                 //生成
-                var c = GameObject.Instantiate(snapScrollerCellTemplate, m_contentRectTrans);
+                var c = SpawnCell(m_contentRectTrans);
                 ////決定位置
                 //c.rectTransform.anchoredPosition = new Vector2(
                 //    (pos[i] - 0.5f) * totalLength
@@ -327,6 +305,14 @@ namespace RW.UI.SnapScroller {
 
             if (scrollerCells.Count > 1) {
                 //只有按鈕超過2個時才作用
+
+                ////測試兩側跳轉，碰到最兩側會換邊
+                //if (ScrollPosition > 1f) {
+                //    ScrollPosition -= 1f;
+                //}
+                //if (ScrollPosition < 0f) {
+                //    ScrollPosition += 1f;
+                //}
 
                 //處理移動
                 if (m_scrollRect.IsDrag) {
@@ -438,6 +424,56 @@ namespace RW.UI.SnapScroller {
         public void ScrollToIndex(int index) {
             targetIndex = index;
         }
+
+        #endregion
+
+        #region Cell Object Pool - Cell物件池
+
+        #region  -> Objects
+
+        private RectTransform cellPoolTransform;
+
+        private readonly Queue<SnapScrollerCell> cellsInPool = new Queue<SnapScrollerCell>();
+
+        #endregion
+        #region  -> Init
+
+        /// <summary>
+        /// 初始化Cell物件池
+        /// </summary>
+        private void InitCellObjectPool() {
+            var go = new GameObject("Cell Pool", typeof(RectTransform));
+            cellPoolTransform = go.GetComponent<RectTransform>();
+            cellPoolTransform.SetParent(this.gameObject.transform, false);
+            cellPoolTransform.gameObject.SetActive(false);
+        }
+
+        #endregion
+        #region  -> Cell - Spawn
+
+        /// <summary>
+        /// 生成Cell，會嘗試從物件池取出
+        /// </summary>
+        private SnapScrollerCell SpawnCell(Transform parent) {
+            SnapScrollerCell cell;
+            if (cellsInPool.Count > 0) {
+                cell = cellsInPool.Dequeue();
+                cell.gameObject.transform.SetParent(parent, false);
+            } else {
+                cell = GameObject.Instantiate(snapScrollerCellTemplate, parent, false);
+            }
+            return cell;
+        }
+
+        #endregion
+        #region  -> Cell - Despawn
+
+        private void DespawnCell(SnapScrollerCell cell) {
+            cellsInPool.Enqueue(cell);
+            cell.gameObject.transform.SetParent(cellPoolTransform, false);
+        }
+
+        #endregion
 
         #endregion
 
