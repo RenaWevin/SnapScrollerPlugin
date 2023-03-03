@@ -316,37 +316,7 @@ namespace RW.UI.SnapScroller {
         #endregion
 
         #endregion
-
-        #region Public Functions - 外部方法
-
-        /// <summary>
-        /// Scroll to target cell, 0 means first.
-        /// Could be interrupt by any touch.
-        /// 使Scroller自動捲動到指定index的cell，0代表第一個，可被任何的點擊或觸碰中斷。
-        /// </summary>
-        public void ScrollToIndex(int index) {
-            targetIndex = index;
-        }
-
-        #endregion
-
-        /// <summary>
-        /// 測試用生成數量
-        /// </summary>
-        [Space(50)]
-        [SerializeField]
-        private int testCellCount = 5;
-
-        private readonly List<SnapScrollerCell> scrollerCells = new List<SnapScrollerCell>();
-        float[] pos = { 0f };
-        float distance;
-
-        //要移動到的位置
-        public int targetIndex = -1;
-
-        //目前選擇的按鈕是幾號
-        public int nowSelectedIndex = 0;
-
+        #region Update
 
         void Update() {
 
@@ -396,6 +366,7 @@ namespace RW.UI.SnapScroller {
 
         }
 
+        #endregion
         #region UpdateDisplay
 
         /// <summary>
@@ -456,6 +427,37 @@ namespace RW.UI.SnapScroller {
         }
 
         #endregion
+
+        #region Public Functions - 外部方法
+
+        /// <summary>
+        /// Scroll to target cell, 0 means first.
+        /// Could be interrupt by any touch.
+        /// 使Scroller自動捲動到指定index的cell，0代表第一個，可被任何的點擊或觸碰中斷。
+        /// </summary>
+        public void ScrollToIndex(int index) {
+            targetIndex = index;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// 測試用生成數量
+        /// </summary>
+        [Space(50)]
+        [SerializeField]
+        private int testCellCount = 5;
+
+        private readonly List<SnapScrollerCell> scrollerCells = new List<SnapScrollerCell>();
+        float[] pos = { 0f };
+        float distance;
+
+        //要移動到的位置
+        public int targetIndex = -1;
+
+        //目前選擇的按鈕是幾號
+        public int nowSelectedIndex = 0;
+
 
         private bool IsScrollPosInIndex(int target) {
             if ((target < 0) || (target >= pos.Length)) {
