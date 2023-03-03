@@ -53,6 +53,32 @@ namespace RW.UI.SnapScroller {
         #endregion
         #region Private Variables - 私有參數
 
+        #region  -> CellSize
+
+        /// <summary>
+        /// 被選擇時的Cell大小(包括Scale後的大小，單位Pixel)
+        /// </summary>
+        private Vector2 cellSize_OnFocus {
+            get {
+                Vector2 focusedCellSize;
+                switch (cellResizeType) {
+                    default:
+                    case CellResizeType.None:
+                        focusedCellSize = snapScrollerCellTemplate.GetRectTransformSize;
+                        break;
+                    case CellResizeType.Scale:
+                        focusedCellSize = snapScrollerCellTemplate.GetRectTransformSize * cellScaleForOnFocus;
+                        break;
+                    case CellResizeType.WidthAndHeight:
+                        focusedCellSize = cellSizeForOnFocus;
+                        break;
+                }
+                return focusedCellSize;
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// 取得/設定Scroll位置，0:左/上，1:右/下
         /// </summary>
@@ -87,7 +113,9 @@ namespace RW.UI.SnapScroller {
                 return parentContainerRectTransform.rect.size;
             }
         }
-        //Content的母物件邊長(依據捲動方向)
+        /// <summary>
+        /// Content的母物件邊長(依據捲動方向)
+        /// </summary>
         private float parentContainerSideLength {
             get {
                 if (scrollDirection == ScrollDirection.Horizontal) {
@@ -104,6 +132,20 @@ namespace RW.UI.SnapScroller {
         private Vector2 contentSize { get {
                 return m_contentRectTrans.rect.size;
         } }
+        /// <summary>
+        /// Content的邊長(依據捲動方向)
+        /// </summary>
+        private float contentSideLength {
+            get {
+                if (scrollDirection == ScrollDirection.Horizontal) {
+                    //橫向-X
+                    return contentSize.x;
+                } else {
+                    //直向-Y
+                    return contentSize.y;
+                }
+            }
+        }
 
         #endregion
         #region Parameters - 可調整參數
@@ -114,10 +156,23 @@ namespace RW.UI.SnapScroller {
         [SerializeField]
         private ScrollDirection scrollDirection;
 
+        /// <summary>
+        /// Cell模板
+        /// </summary>
         [SerializeField]
         private SnapScrollerCell snapScrollerCellTemplate;
+
+        /// <summary>
+        /// Cell的間距
+        /// </summary>
         [SerializeField]
         private float spacing = 50f;
+
+        /// <summary>
+        /// 是否可循環顯示
+        /// </summary>
+        [SerializeField]
+        private bool loop = false;
 
         /// <summary>
         /// Resizing methods for cells.
@@ -137,6 +192,18 @@ namespace RW.UI.SnapScroller {
         /// </summary>
         [SerializeField]
         private Vector2 cellScaleForOthers = Vector2.one * 0.8f;
+        /// <summary>
+        /// Size of cells when it's on focus. (Pixel)
+        /// 被選中時，Cell的大小。 (單位: Pixel)
+        /// </summary>
+        [SerializeField]
+        private Vector2 cellSizeForOnFocus = new Vector2(120f, 120f);
+        /// <summary>
+        /// Size of cells when they're not on focus. (Pixel)
+        /// 未被選中的Cell的大小。 (單位: Pixel)
+        /// </summary>
+        [SerializeField]
+        private Vector2 cellSizeForOthers = new Vector2(100f, 100f);
 
         [SerializeField, Range(5f, 100f)]
         private float moveSpeed = 10f;
@@ -192,13 +259,9 @@ namespace RW.UI.SnapScroller {
                 m_contentRectTrans.SetParent(m_rectTransform, false);
                 parentContainerRectTransform = m_rectTransform;
             }
-            ////調整Content大小 (改以ContentSizeFitter處理)
-            //Vector2 newSize = (snapScrollerCellTemplate.rectTransform.rect.size + Vector2.one * spacing) * (testCellCount - 1) + parentSize;
-            //if (scrollDirection == ScrollDirection.Horizontal) {
-            //    m_contentRectTrans.sizeDelta = new Vector2(Mathf.Max(newSize.x, parentSize.x), parentSize.y);
-            //} else {
-            //    m_contentRectTrans.sizeDelta = new Vector2(parentSize.x, Mathf.Max(newSize.y, parentSize.y));
-            //}
+            //調整Content大小 (用以讓他至少大小跟母物件邊長一樣)
+            Vector2 newSize = (snapScrollerCellTemplate.rectTransform.rect.size + Vector2.one * spacing) * (testCellCount - 1) + parentContainerSize;
+            m_contentRectTrans.sizeDelta = newSize;
             //設定Content
             m_scrollRect.content = m_contentRectTrans;
             //位置重設
@@ -236,9 +299,9 @@ namespace RW.UI.SnapScroller {
         /// </summary>
         private void UpdateSettingLayoutGroupPadding() {
             if (scrollDirection == ScrollDirection.Horizontal) {
-                m_layoutGroup.padding.left = m_layoutGroup.padding.right = (int)((parentContainerSideLength - snapScrollerCellTemplate.GetRectTransformSize.x) / 2f);
+                m_layoutGroup.padding.left = m_layoutGroup.padding.right = (int)((parentContainerSideLength - cellSize_OnFocus.x) / 2f);
             } else {
-                m_layoutGroup.padding.top = m_layoutGroup.padding.bottom = (int)((parentContainerSideLength - snapScrollerCellTemplate.GetRectTransformSize.y) / 2f);
+                m_layoutGroup.padding.top = m_layoutGroup.padding.bottom = (int)((parentContainerSideLength - cellSize_OnFocus.y) / 2f);
             }
         }
 
@@ -265,24 +328,7 @@ namespace RW.UI.SnapScroller {
                 pos = new float[1] { 0f };
             }
 
-            scrollerCells.Clear();
-            float totalLength = (testCellCount-1) * (snapScrollerCellTemplate.rectTransform.rect.width + spacing);
-            for (int i = 0; i < testCellCount; i++) {
-                //生成
-                var c = SpawnCell(m_contentRectTrans);
-                ////決定位置
-                //c.rectTransform.anchoredPosition = new Vector2(
-                //    (pos[i] - 0.5f) * totalLength
-                //    , 0);
-                //註冊事件
-                int j = i;
-                c.button.onClick.AddListener(delegate { OnClickBtn_Index(j); });
-                c.SetText($"Data {j}");
-                //顯示
-                c.gameObject.SetActive(true);
-                //登錄進列表中
-                scrollerCells.Add(c);
-            }
+            SetData_Test();
 
             //更新Layout
             UpdateDisplay_ResizeCells(immediately: true);
@@ -349,6 +395,9 @@ namespace RW.UI.SnapScroller {
             UpdateDisplay_ResizeCells(false);
             UpdateDisplay_SetLayout(onlyLayout: true);
             UpdateSettingLayoutGroupPadding();
+
+            //更新能顯示的Cell
+            RefreshCellsActive();
 
         }
 
@@ -478,6 +527,95 @@ namespace RW.UI.SnapScroller {
         #endregion
 
         /// <summary>
+        /// 測試設定資料
+        /// </summary>
+        private void SetData_Test() {
+
+            //處理Cell
+            scrollerCells.Clear();
+            for (int i = 0; i < testCellCount; i++) {
+                //生成
+                var c = SpawnCell(m_contentRectTrans);
+                //註冊事件
+                int j = i;
+                c.button.onClick.AddListener(delegate { OnClickBtn_Index(j); });
+                c.SetText($"Data {j}");
+                //顯示
+                c.gameObject.SetActive(true);
+                //登錄進列表中
+                if (i < scrollerCells.Count) {
+                    scrollerCells[i] = c;
+                } else {
+                    scrollerCells.Add(c);
+                }
+            }
+
+        }
+
+        /// <summary>
+        /// 刷新目前使用中的Cell
+        /// </summary>
+        private void RefreshCellsActive() {
+
+            GetActiveCellIndexRange(out int dataIndexStart, out int dataIndexEnd);
+            Debug.Log($"GetActiveCellIndexRange: ( {dataIndexStart}, {dataIndexEnd} )");
+            for (int i = dataIndexStart; i <= dataIndexEnd; i++) {
+
+            }
+
+        }
+
+        /// <summary>
+        /// 取得會顯示Cell的編號範圍，範圍包括Start與End
+        /// </summary>
+        /// <param name="dataIndexStart"></param>
+        /// <param name="dataIndexEnd"></param>
+        private void GetActiveCellIndexRange(out int dataIndexStart, out int dataIndexEnd) {
+
+            float cellSideLength;
+            if (scrollDirection == ScrollDirection.Horizontal) {
+                cellSideLength = cellSize_OnFocus.x;
+            } else {
+                cellSideLength = cellSize_OnFocus.y;
+            }
+            float pixelDistance = (parentContainerSideLength + cellSideLength) / 2f;
+            var distanceToSide = PixelDistanceToScrollPositionDelta(pixelDistance);
+            dataIndexStart = ScrollPositionToDataIndex(ScrollPosition - distanceToSide);
+            dataIndexEnd = ScrollPositionToDataIndex(ScrollPosition + distanceToSide);
+
+            if (!loop) {
+                dataIndexStart = Mathf.Max(dataIndexStart, 0);
+                dataIndexEnd = Mathf.Min(dataIndexEnd, testCellCount - 1);
+            }
+        }
+
+        /// <summary>
+        /// 像素距離轉ScrollPosition距離
+        /// </summary>
+        /// <param name="distance"></param>
+        /// <returns></returns>
+        private float PixelDistanceToScrollPositionDelta(float distance) {
+            float contentScrollLength = contentSideLength;
+            if (scrollDirection == ScrollDirection.Horizontal) {
+                contentScrollLength -= m_layoutGroup.padding.left;
+                contentScrollLength -= m_layoutGroup.padding.right;
+            } else {
+                contentScrollLength -= m_layoutGroup.padding.top;
+                contentScrollLength -= m_layoutGroup.padding.bottom;
+            }
+            return distance / contentScrollLength;
+        }
+
+        /// <summary>
+        /// 從Scroll位置換算成該位置會被Focus的資料編號(正中間那個Data的編號)
+        /// </summary>
+        /// <param name="pos">ScrollPosition</param>
+        /// <returns>正中間那個Data的編號，可能超過或低於Data編號的範圍</returns>
+        private int ScrollPositionToDataIndex(float pos) {
+            return Mathf.RoundToInt(pos / distance);
+        }
+
+        /// <summary>
         /// 測試用生成數量
         /// </summary>
         [Space(50)]
@@ -486,6 +624,9 @@ namespace RW.UI.SnapScroller {
 
         private readonly List<SnapScrollerCell> scrollerCells = new List<SnapScrollerCell>();
         float[] pos = { 0f };
+        /// <summary>
+        /// 每個cell之間的距離(單位是ScrollPosition)
+        /// </summary>
         float distance;
 
         //要移動到的位置
