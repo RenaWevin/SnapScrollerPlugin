@@ -98,8 +98,14 @@ namespace RW.UI.SnapScroller {
             }
         }
 
+        //Content的母物件
+        private RectTransform parentContainerRectTransform;
         //Content的母物件大小
-        private Vector2 parentContainerSize;
+        private Vector2 parentContainerSize {
+            get {
+                return parentContainerRectTransform.rect.size;
+            }
+        }
         //Content的母物件邊長(依據捲動方向)
         private float parentContainerSideLength {
             get {
@@ -200,16 +206,14 @@ namespace RW.UI.SnapScroller {
             //新增RectTransform
             m_contentRectTrans = contentInstObj.AddComponent<RectTransform>();
             //取得母物件容器大小
-            Vector2 parentSize;
             if (m_scrollRect.viewport != null) {
                 m_contentRectTrans.SetParent(m_scrollRect.viewport);
-                parentSize = new Vector2(m_scrollRect.viewport.rect.width, m_scrollRect.viewport.rect.height);
+                parentContainerRectTransform = m_scrollRect.viewport;
             } else {
                 m_contentRectTrans.SetParent(m_rectTransform);
-                parentSize = new Vector2(m_rectTransform.rect.width, m_rectTransform.rect.height);
+                parentContainerRectTransform = m_rectTransform;
             }
             m_contentRectTrans.localScale = Vector3.one;
-            parentContainerSize = parentSize;
             ////調整Content大小 (改以ContentSizeFitter處理)
             //Vector2 newSize = (snapScrollerCellTemplate.rectTransform.rect.size + Vector2.one * spacing) * (testCellCount - 1) + parentSize;
             //if (scrollDirection == ScrollDirection.Horizontal) {
@@ -242,15 +246,22 @@ namespace RW.UI.SnapScroller {
                 ? contentInstObj.AddComponent<HorizontalLayoutGroup>()
                 : contentInstObj.AddComponent<VerticalLayoutGroup>();
             layoutGroup.spacing = this.spacing;
-            if (scrollDirection == ScrollDirection.Horizontal) {
-                layoutGroup.padding.left = layoutGroup.padding.right = (int)((parentContainerSideLength - snapScrollerCellTemplate.GetRectTransformSize.x) / 2f);
-            } else {
-                layoutGroup.padding.top = layoutGroup.padding.bottom = (int)((parentContainerSideLength - snapScrollerCellTemplate.GetRectTransformSize.y) / 2f);
-            }
+            UpdateSettingLayoutGroupPadding();
             layoutGroup.childAlignment = TextAnchor.MiddleCenter;
             layoutGroup.childControlWidth = layoutGroup.childControlHeight = false;
             layoutGroup.childScaleWidth = layoutGroup.childScaleHeight = true;
             layoutGroup.childForceExpandWidth = layoutGroup.childForceExpandHeight = false;
+        }
+
+        /// <summary>
+        /// 更新Padding設定
+        /// </summary>
+        private void UpdateSettingLayoutGroupPadding() {
+            if (scrollDirection == ScrollDirection.Horizontal) {
+                m_layoutGroup.padding.left = m_layoutGroup.padding.right = (int)((parentContainerSideLength - snapScrollerCellTemplate.GetRectTransformSize.x) / 2f);
+            } else {
+                m_layoutGroup.padding.top = m_layoutGroup.padding.bottom = (int)((parentContainerSideLength - snapScrollerCellTemplate.GetRectTransformSize.y) / 2f);
+            }
         }
 
         #endregion
@@ -381,6 +392,7 @@ namespace RW.UI.SnapScroller {
             //縮放大小
             UpdateDisplay_ResizeCells(false);
             UpdateDisplay_SetLayout(onlyLayout: true);
+            UpdateSettingLayoutGroupPadding();
 
         }
 
