@@ -10,6 +10,11 @@ namespace RW.UI.SnapScrollerDemo {
         [SerializeField]
         private SnapScroller scroller;
 
+        private void Awake() {
+            //test for fps
+            Application.targetFrameRate = 60;
+        }
+
         void Start() {
             scroller.SetManager(manager);
             manager.ClearData();

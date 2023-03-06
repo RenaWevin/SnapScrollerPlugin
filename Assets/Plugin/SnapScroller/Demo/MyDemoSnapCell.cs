@@ -1,5 +1,4 @@
 ﻿
-using System.Collections.Generic;
 using UnityEngine;
 using RW.UI.SnapScrollerPlugin;
 using UnityEngine.UI;
