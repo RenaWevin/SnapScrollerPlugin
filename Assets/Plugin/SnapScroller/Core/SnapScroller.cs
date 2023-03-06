@@ -12,7 +12,7 @@ namespace RW.UI.SnapScrollerPlugin {
     [RequireComponent(typeof(ScrollRectWithDragState))]
     public class SnapScroller : MonoBehaviour {
 
-        #region Enum
+        #region Enum of options
 
         /// <summary>
         /// Scroll directions
@@ -78,6 +78,7 @@ namespace RW.UI.SnapScrollerPlugin {
         }
 
         #endregion
+        #region  -> ScrollPosition
 
         /// <summary>
         /// 取得/設定Scroll位置，0:左/上，1:右/下
@@ -105,6 +106,9 @@ namespace RW.UI.SnapScrollerPlugin {
             }
         }
 
+        #endregion
+        #region  -> Parent
+
         //Content的母物件
         private RectTransform parentContainerRectTransform;
         //Content的母物件大小
@@ -128,6 +132,9 @@ namespace RW.UI.SnapScrollerPlugin {
             }
         }
 
+        #endregion
+        #region  -> ContentSize
+
         //Content大小
         private Vector2 contentSize { get {
                 return m_contentRectTrans.rect.size;
@@ -146,6 +153,8 @@ namespace RW.UI.SnapScrollerPlugin {
                 }
             }
         }
+
+        #endregion
 
         #endregion
         #region Parameters - 可調整參數
@@ -211,6 +220,10 @@ namespace RW.UI.SnapScrollerPlugin {
         [SerializeField]
         private Vector2 cellSizeForOthers = new Vector2(100f, 100f);
 
+        /// <summary>
+        /// Speed of auto-move, used by ScrollToIndex().
+        /// 自動移動的速度，影響ScrollToIndex()。
+        /// </summary>
         [SerializeField, Range(5f, 100f)]
         private float moveSpeed = 10f;
 
