@@ -53,6 +53,14 @@ namespace RW.UI.SnapScrollerPlugin {
         #endregion
         #region Private Variables - 私有參數
 
+        #region  -> NowUsingCells
+
+        /// <summary>
+        /// 正在使用中的Cell們。
+        /// </summary>
+        private readonly Dictionary<int, SnapScrollerCell> nowUsingCells = new Dictionary<int, SnapScrollerCell>();
+
+        #endregion
         #region  -> CellSize
 
         /// <summary>
@@ -151,6 +159,21 @@ namespace RW.UI.SnapScrollerPlugin {
                     //直向-Y
                     return contentSize.y;
                 }
+            }
+        }
+
+        #endregion
+        #region  -> ManagerDataCount
+
+        /// <summary>
+        /// 取得目前Manager的資料數量
+        /// </summary>
+        private int ManagerDataCount {
+            get {
+                if (manager != null) {
+                    return manager.datas.Count;
+                }
+                return 0;
             }
         }
 
@@ -334,18 +357,6 @@ namespace RW.UI.SnapScrollerPlugin {
             snapScrollerCellTemplate.rectTransform.localPosition = new Vector2(3939, 39393);
             snapScrollerCellTemplate.gameObject.SetActive(false);
 
-            //計算每個Cell的NormalizedPosition
-            if (testCellCount > 1) {
-                //只有按鈕超過2個時才作用
-                pos = new float[testCellCount];
-                distance = 1f / (pos.Length - 1);
-                for (int i = 0; i < pos.Length; i++) {
-                    pos[i] = distance * i;
-                }
-            } else {
-                pos = new float[1] { 0f };
-            }
-
             //更新Layout
             UpdateDisplay_ResizeCells(immediately: true);
             UpdateDisplay_SetLayout(onlyLayout: false);
@@ -366,7 +377,7 @@ namespace RW.UI.SnapScrollerPlugin {
             }
 
             if (nowUsingCells.Count > 1) {
-                //只有按鈕超過2個時才作用
+                //只有Cell超過2個時才作用
 
                 ////測試兩側跳轉，碰到最兩側會換邊
                 //if (ScrollPosition > 1f) {
@@ -382,7 +393,7 @@ namespace RW.UI.SnapScrollerPlugin {
                 } else {
                     if (targetIndex >= 0) {
                         //根據點擊的移動
-                        if (targetIndex >= pos.Length) {
+                        if (targetIndex >= ManagerDataCount) {
                             targetIndex = -1; //Index錯誤:超過長度
                         }
                         if (IsScrollPosInIndex(targetIndex)) {
@@ -390,16 +401,16 @@ namespace RW.UI.SnapScrollerPlugin {
                             targetIndex = -1;
                         } else {
                             //移動
-                            ScrollPosition = Mathf.Lerp(ScrollPosition, pos[targetIndex], LerpSpeed);
+                            ScrollPosition = Mathf.Lerp(ScrollPosition, GetCellPosition(targetIndex), LerpSpeed);
                         }
                     } else {
                         //放開時的移動
-                        for (int i = 0; i < pos.Length; i++) {
+                        for (int i = 0; i < ManagerDataCount; i++) {
                             if (IsScrollPosInIndex(i)) {
-                                if (Mathf.Abs(ScrollPosition - pos[i]) < 1E-3f) {
-                                    ScrollPosition = pos[i];
+                                if (Mathf.Abs(ScrollPosition - GetCellPosition(i)) < 1E-3f) {
+                                    ScrollPosition = GetCellPosition(i);
                                 } else {
-                                    ScrollPosition = Mathf.Lerp(ScrollPosition, pos[i], LerpSpeed);
+                                    ScrollPosition = Mathf.Lerp(ScrollPosition, GetCellPosition(i), LerpSpeed);
                                 }
                             }
                         }
@@ -429,31 +440,41 @@ namespace RW.UI.SnapScrollerPlugin {
             if (nowUsingCells.Count <= 0) { return; }
 
             if (cellResizeType != CellResizeType.None) {
-                for (int i = 0; i < pos.Length; i++) {
-                    if (IsScrollPosInIndex(i)) {
+                foreach (var c in nowUsingCells) {
+                    if (IsScrollPosInIndex(c.Key)) {
                         //這個編號就是目前的位置
-                        nowSelectedIndex = i;
+                        nowSelectedIndex = c.Key;
                         switch (cellResizeType) {
                             case CellResizeType.Scale:
                                 if (immediately) {
-                                    nowUsingCells[i].transform.localScale = cellScaleForOnFocus;
+                                    c.Value.transform.localScale = cellScaleForOnFocus;
                                 } else {
-                                    nowUsingCells[i].transform.localScale = Vector2.Lerp(nowUsingCells[i].GetResizeRectTransformLocalScale, cellScaleForOnFocus, LerpSpeed);
+                                    c.Value.transform.localScale = Vector2.Lerp(c.Value.GetResizeRectTransformLocalScale, cellScaleForOnFocus, LerpSpeed);
                                 }
                                 break;
                             case CellResizeType.WidthAndHeight:
+                                if (immediately) {
+                                    c.Value.ResizeTransformWidthHeight(cellSizeForOnFocus);
+                                } else {
+                                    c.Value.ResizeTransformWidthHeight(Vector2.Lerp(c.Value.GetResizeRectTransformSize, cellSizeForOnFocus, LerpSpeed));
+                                }
                                 break;
                         }
                     } else {
                         switch (cellResizeType) {
                             case CellResizeType.Scale:
                                 if (immediately) {
-                                    nowUsingCells[i].transform.localScale = cellScaleForOthers;
+                                    c.Value.transform.localScale = cellScaleForOthers;
                                 } else {
-                                    nowUsingCells[i].transform.localScale = Vector2.Lerp(nowUsingCells[i].GetResizeRectTransformLocalScale, cellScaleForOthers, LerpSpeed);
+                                    c.Value.transform.localScale = Vector2.Lerp(c.Value.GetResizeRectTransformLocalScale, cellScaleForOthers, LerpSpeed);
                                 }
                                 break;
                             case CellResizeType.WidthAndHeight:
+                                if (immediately) {
+                                    c.Value.ResizeTransformWidthHeight(cellSizeForOthers);
+                                } else {
+                                    c.Value.ResizeTransformWidthHeight(Vector2.Lerp(c.Value.GetResizeRectTransformSize, cellSizeForOthers, LerpSpeed));
+                                }
                                 break;
                         }
                     }
@@ -499,7 +520,7 @@ namespace RW.UI.SnapScrollerPlugin {
 
             //處理Cell
             nowUsingCells.Clear();
-            for (int i = 0; i < testCellCount; i++) {
+            for (int i = 0; i < manager.datas.Count; i++) {
                 //生成
                 var c = SpawnCell(m_contentRectTrans);
                 //註冊index
@@ -511,7 +532,7 @@ namespace RW.UI.SnapScrollerPlugin {
                 if (i < nowUsingCells.Count) {
                     nowUsingCells[i] = c;
                 } else {
-                    nowUsingCells.Add(c);
+                    nowUsingCells.Add(i, c);
                 }
             }
 
@@ -611,7 +632,7 @@ namespace RW.UI.SnapScrollerPlugin {
 
             if (!loop) {
                 dataIndexStart = Mathf.Max(dataIndexStart, 0);
-                dataIndexEnd = Mathf.Min(dataIndexEnd, testCellCount - 1);
+                dataIndexEnd = Mathf.Min(dataIndexEnd, Mathf.Max(ManagerDataCount - 1, 0));
             }
         }
 
@@ -638,27 +659,39 @@ namespace RW.UI.SnapScrollerPlugin {
         /// <param name="pos">ScrollPosition</param>
         /// <returns>正中間那個Data的編號，可能超過或低於Data編號的範圍</returns>
         private int ScrollPositionToDataIndex(float pos) {
-            return Mathf.RoundToInt(pos / distance);
+            return Mathf.RoundToInt(pos / cellDistance);
+        }
+
+
+        
+
+        /// <summary>
+        /// 取得Cell在ScrollPosition中的位置。
+        /// </summary>
+        /// <param name="cellIndex"></param>
+        /// <returns></returns>
+        private float GetCellPosition(int cellIndex) {
+            if (ManagerDataCount > 1) {
+                return cellDistance * cellIndex;
+            }
+            return 0;
         }
 
         /// <summary>
-        /// 測試用生成數量
+        /// 每個cell之間的NormalizedPosition距離(單位是ScrollPosition)
         /// </summary>
-        [Space(50)]
-        [SerializeField]
-        private int testCellCount = 5;
-
-        /// <summary>
-        /// 正在使用中的Cell們。
-        /// </summary>
-        private readonly List<SnapScrollerCell> nowUsingCells = new List<SnapScrollerCell>();
-        float[] pos = { 0f };
-        /// <summary>
-        /// 每個cell之間的距離(單位是ScrollPosition)
-        /// </summary>
-        float distance;
+        private float cellDistance {
+            get {
+                if (ManagerDataCount > 1) {
+                    return 1f / (ManagerDataCount - 1);
+                } else {
+                    return 1f;
+                }
+            }
+        }
 
         //要移動到的位置
+        [Space(50)]
         public int targetIndex = -1;
 
         //目前選擇的按鈕是幾號
@@ -671,12 +704,12 @@ namespace RW.UI.SnapScrollerPlugin {
         /// <param name="target"></param>
         /// <returns></returns>
         private bool IsScrollPosInIndex(int target) {
-            if ((target < 0) || (target >= pos.Length)) {
+            if ((target < 0) || (target >= ManagerDataCount)) {
                 //錯誤
                 return false;
             }
-            return (target == pos.Length-1 || (ScrollPosition <= (pos[target] + (distance / 2))))
-                    && (target == 0 || (ScrollPosition > (pos[target] - (distance / 2))));
+            return (target == ManagerDataCount-1 || (ScrollPosition <= (GetCellPosition(target) + (cellDistance / 2))))
+                    && (target == 0 || (ScrollPosition > (GetCellPosition(target) - (cellDistance / 2))));
         }
 
     }
