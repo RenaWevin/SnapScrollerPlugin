@@ -1,9 +1,63 @@
-using System.Collections;
+
 using System.Collections.Generic;
-using UnityEngine;
 
-public class SnapScrollerManager {
-    
+namespace RW.UI.SnapScrollerPlugin {
 
+    /// <summary>
+    /// Manager of ScrollerData.
+    /// 專門管理 ScrollerData 的 Manager class。
+    /// </summary>
+    public class SnapScrollerManager {
 
+        /// <summary>
+        /// Datas of Scroller.
+        /// Scroller的資料。
+        /// </summary>
+        public readonly List<ISnapScrollerData> datas = new List<ISnapScrollerData>();
+
+        /// <summary>
+        /// Try to get scroller data, if index is out of range, it will be converted to a right index by offset.
+        /// 嘗試取得Scroller資料，如果index超過資料範圍，將會平移轉換成正確的範圍。
+        /// (ex. Range = (0~9), index = -1, output = datas[9])
+        /// </summary>
+        /// <param name="cellIndex">Index of cell. Cell的編號。</param>
+        /// <returns>If datas is empty(Count = 0), returns null.
+        /// 如果資料是空的(0筆)，將會回傳null。</returns>
+        public ISnapScrollerData TryGetData(int cellIndex) {
+
+            if (datas.Count <= 0) {
+                return null;
+            }
+
+            int index = cellIndex;
+            if (cellIndex >= datas.Count) {
+                index = cellIndex % datas.Count;
+            } else if (cellIndex < 0) {
+                index = cellIndex % datas.Count;
+                if (index < 0) {
+                    index += datas.Count;
+                }
+            }
+            return datas[index];
+
+        }
+
+        /// <summary>
+        /// Clear all data.
+        /// 清除所有資料。
+        /// </summary>
+        public void ClearData() {
+            datas.Clear();
+        }
+
+        /// <summary>
+        /// Add a new data to scroller.
+        /// 新增一筆新的資料到Scroller。
+        /// </summary>
+        /// <param name="data"></param>
+        public void AddData(ISnapScrollerData data) {
+            datas.Add(data);
+        }
+
+    }
 }

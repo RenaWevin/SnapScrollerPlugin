@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace RW.UI.SnapScroller {
+namespace RW.UI.SnapScrollerPlugin {
     public class ScrollRectWithDragState : ScrollRect, IPointerDownHandler, IPointerUpHandler {
         
         public bool IsDrag { get; protected set; }

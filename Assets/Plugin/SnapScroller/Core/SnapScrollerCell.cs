@@ -1,9 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿
 using UnityEngine;
-using UnityEngine.UI;
 
-namespace RW.UI.SnapScroller {
+namespace RW.UI.SnapScrollerPlugin {
 
     [RequireComponent(typeof(RectTransform))]
     public class SnapScrollerCell : MonoBehaviour {
@@ -36,23 +34,41 @@ namespace RW.UI.SnapScroller {
         private RectTransform _rectTransform;
 
         #endregion
+        #region Datas - 資料區
 
-        [SerializeField]
-        public Button button;
-        [SerializeField]
-        private Text text;
+        private SnapScrollerManager manager;
+        protected int cellIndex;
 
-        public void SetText(string value) {
-            if (text != null) {
-                text.text = value;
+        protected ISnapScrollerData GetData {
+            get {
+                if (manager != null) {
+                    return manager.TryGetData(cellIndex);
+                }
+                return null;
             }
         }
+
+        #endregion
 
         #region Awake/Init
 
         private void Awake() {
             rectTransform = this.gameObject.GetComponent<RectTransform>();
         }
+
+        #endregion
+        #region SetData
+
+        /// <summary>
+        /// 設定目前Cell的資料
+        /// </summary>
+        public void SetData(int index, SnapScrollerManager newManager = null) {
+            cellIndex = index;
+            if (newManager != null) { manager = newManager; }
+            OnSetData();
+        }
+
+        public virtual void OnSetData() { }
 
         #endregion
         #region Resize Method - 縮放大小方法
