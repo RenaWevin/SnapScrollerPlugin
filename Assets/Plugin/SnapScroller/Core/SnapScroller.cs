@@ -63,6 +63,8 @@ namespace RW.UI.SnapScrollerPlugin {
         #endregion
         #region  -> CellSize
 
+        #region  --> OnFocus
+
         /// <summary>
         /// 被選擇時的Cell大小(包括Scale後的大小，單位Pixel)
         /// </summary>
@@ -72,7 +74,7 @@ namespace RW.UI.SnapScrollerPlugin {
                 switch (cellResizeType) {
                     default:
                     case CellResizeType.None:
-                        focusedCellSize = snapScrollerCellTemplate.GetRectTransformSize;
+                        focusedCellSize = cellSize_Default;
                         break;
                     case CellResizeType.Scale:
                         focusedCellSize = snapScrollerCellTemplate.GetRectTransformSize * cellScaleForOnFocus;
@@ -84,6 +86,42 @@ namespace RW.UI.SnapScrollerPlugin {
                 return focusedCellSize;
             }
         }
+
+        #endregion
+        #region  --> NotFocus
+
+        /// <summary>
+        /// 未被選擇時的Cell大小(包括Scale後的大小，單位Pixel)
+        /// </summary>
+        private Vector2 cellSize_NotFocus {
+            get {
+                Vector2 cellSize;
+                switch (cellResizeType) {
+                    default:
+                    case CellResizeType.None:
+                        cellSize = cellSize_Default;
+                        break;
+                    case CellResizeType.Scale:
+                        cellSize = snapScrollerCellTemplate.GetRectTransformSize * cellScaleForOthers;
+                        break;
+                    case CellResizeType.WidthAndHeight:
+                        cellSize = cellSizeForOthers;
+                        break;
+                }
+                return cellSize;
+            }
+        }
+
+        #endregion
+        #region  --> Default
+
+        private Vector2 cellSize_Default {
+            get {
+                return snapScrollerCellTemplate.GetRectTransformSize;
+            }
+        }
+
+        #endregion
 
         #endregion
         #region  -> ScrollPosition
@@ -159,6 +197,24 @@ namespace RW.UI.SnapScrollerPlugin {
                     //直向-Y
                     return contentSize.y;
                 }
+            }
+        }
+
+        #endregion
+        #region  -> CellPositionDelta_FromFirstToLast
+
+        /// <summary>
+        /// 從第0個到最後一個cell位置的距離(pixel)
+        /// </summary>
+        private float cellPositionDelta_FromFirstToLast {
+            get {
+
+                if (scrollDirection == ScrollDirection.Horizontal) {
+
+                } else {
+
+                }
+                return 0;
             }
         }
 
@@ -269,6 +325,8 @@ namespace RW.UI.SnapScrollerPlugin {
             m_rectTransform = this.GetComponent<RectTransform>();
             m_scrollRect = this.GetComponent<ScrollRectWithDragState>();
 
+            m_scrollRect.onValueChanged.AddListener(OnScroll);
+
             InitCellObjectPool();
             InitContent();
             InitCells();
@@ -358,7 +416,7 @@ namespace RW.UI.SnapScrollerPlugin {
             snapScrollerCellTemplate.gameObject.SetActive(false);
 
             //更新Layout
-            UpdateDisplay_ResizeCells(immediately: true);
+            UpdateDisplay_ResizeCells();
             UpdateDisplay_SetLayout(onlyLayout: false);
 
             ScrollPosition = 0f;
@@ -376,8 +434,8 @@ namespace RW.UI.SnapScrollerPlugin {
                 Application.Quit();
             }
 
-            if (nowUsingCells.Count > 1) {
-                //只有Cell超過2個時才作用
+            if (ManagerDataCount > 1) {
+                //只有資料超過2筆時才作用
 
                 ////測試兩側跳轉，碰到最兩側會換邊
                 //if (ScrollPosition > 1f) {
@@ -418,10 +476,23 @@ namespace RW.UI.SnapScrollerPlugin {
                 }
             }
 
+            //取得目前位置
+            nowSelectedIndex = ScrollPositionToDataIndex(ScrollPosition);
+
             //縮放大小
-            UpdateDisplay_ResizeCells(false);
+            UpdateDisplay_ResizeCells();
             UpdateDisplay_SetLayout(onlyLayout: true);
             UpdateSettingLayoutGroupPadding();
+
+        }
+
+        #endregion
+        #region OnScroll
+
+        /// <summary>
+        /// 當滑動Scroller時
+        /// </summary>
+        private void OnScroll(Vector2 vector2) {
 
             //更新能顯示的Cell
             RefreshCellsActive();
@@ -435,48 +506,28 @@ namespace RW.UI.SnapScrollerPlugin {
         /// 計算縮放大小
         /// </summary>
         /// <param name="immediately">直接變成目標大小</param>
-        private void UpdateDisplay_ResizeCells(bool immediately) {
+        private void UpdateDisplay_ResizeCells() {
 
             if (nowUsingCells.Count <= 0) { return; }
 
             if (cellResizeType != CellResizeType.None) {
                 foreach (var c in nowUsingCells) {
-                    if (IsScrollPosInIndex(c.Key)) {
-                        //這個編號就是目前的位置
-                        nowSelectedIndex = c.Key;
-                        switch (cellResizeType) {
-                            case CellResizeType.Scale:
-                                if (immediately) {
-                                    c.Value.transform.localScale = cellScaleForOnFocus;
-                                } else {
-                                    c.Value.transform.localScale = Vector2.Lerp(c.Value.GetResizeRectTransformLocalScale, cellScaleForOnFocus, LerpSpeed);
-                                }
-                                break;
-                            case CellResizeType.WidthAndHeight:
-                                if (immediately) {
-                                    c.Value.ResizeTransformWidthHeight(cellSizeForOnFocus);
-                                } else {
-                                    c.Value.ResizeTransformWidthHeight(Vector2.Lerp(c.Value.GetResizeRectTransformSize, cellSizeForOnFocus, LerpSpeed));
-                                }
-                                break;
-                        }
-                    } else {
-                        switch (cellResizeType) {
-                            case CellResizeType.Scale:
-                                if (immediately) {
-                                    c.Value.transform.localScale = cellScaleForOthers;
-                                } else {
-                                    c.Value.transform.localScale = Vector2.Lerp(c.Value.GetResizeRectTransformLocalScale, cellScaleForOthers, LerpSpeed);
-                                }
-                                break;
-                            case CellResizeType.WidthAndHeight:
-                                if (immediately) {
-                                    c.Value.ResizeTransformWidthHeight(cellSizeForOthers);
-                                } else {
-                                    c.Value.ResizeTransformWidthHeight(Vector2.Lerp(c.Value.GetResizeRectTransformSize, cellSizeForOthers, LerpSpeed));
-                                }
-                                break;
-                        }
+                    float lerp = GetCellPosition(c.Key) - ScrollPosition; //取得目前位置與cell位置的差距
+                    lerp = (lerp < 0) ? -lerp : lerp; //取絕對值
+                    lerp /= cellDistance; //取得lerp的比例
+                    //檢查lerp的程度
+                    if (lerp > (1f - 1E-4f)) {
+                        lerp = 1f;
+                    } else if (lerp <= 1E-4f) {
+                        lerp = 0f;
+                    }
+                    switch (cellResizeType) {
+                        case CellResizeType.Scale:
+                            c.Value.transform.localScale = Vector2.Lerp(cellScaleForOnFocus, cellScaleForOthers, lerp);
+                            break;
+                        case CellResizeType.WidthAndHeight:
+                            c.Value.ResizeTransformWidthHeight(Vector2.Lerp(cellSizeForOnFocus, cellSizeForOthers, lerp));
+                            break;
                     }
                 }
             }
@@ -535,6 +586,7 @@ namespace RW.UI.SnapScrollerPlugin {
                     nowUsingCells.Add(i, c);
                 }
             }
+            //RefreshCellsActive();
 
         }
 
@@ -605,10 +657,35 @@ namespace RW.UI.SnapScrollerPlugin {
         private void RefreshCellsActive() {
 
             GetActiveCellIndexRange(out int dataIndexStart, out int dataIndexEnd);
-            //Debug.Log($"GetActiveCellIndexRange: ( {dataIndexStart}, {dataIndexEnd} )");
-            for (int i = dataIndexStart; i <= dataIndexEnd; i++) {
+            Debug.Log($"GetActiveCellIndexRange: ( {dataIndexStart}, {dataIndexEnd} )");
+            //for (int i = dataIndexStart; i <= dataIndexEnd; i++) {
+            //    if (!nowUsingCells.ContainsKey(i)) {
+            //        //尚未生成的物件
+            //        //生成
+            //        var c = SpawnCell(m_contentRectTrans);
+            //        //註冊index
+            //        int j = i;
+            //        c.SetData(j, manager);
+            //        //顯示
+            //        c.gameObject.SetActive(true);
+            //        //登錄進列表中
+            //        nowUsingCells[i] = c;
+            //    }
+            //}
+            //foreach (var cell in nowUsingCells) {
+            //    if ((cell.Key < dataIndexStart) || (cell.Key > dataIndexEnd)) {
+            //        //移除Cell，搬移至物件池
+            //        DespawnCell(cell.Value);
+            //        //自列表移除
+            //        nowUsingCells.Remove(cell.Key);
+            //    } else {
+            //        //正常顯示，處理排序
+            //        cell.Value.transform.SetSiblingIndex(cell.Key);
+            //    }
+            //}
 
-            }
+            //重新整理Padding
+            UpdateSettingLayoutGroupPadding();
 
         }
 
