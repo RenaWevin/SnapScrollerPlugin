@@ -60,6 +60,11 @@ namespace RW.UI.SnapScrollerPlugin {
         /// </summary>
         private readonly Dictionary<int, SnapScrollerCell> nowUsingCells = new Dictionary<int, SnapScrollerCell>();
 
+        /// <summary>
+        /// 準備despawn的cell編號。
+        /// </summary>
+        private readonly Queue<int> cellIndexesToDespawn = new Queue<int>();
+
         #endregion
         #region  -> CellSize
 
@@ -201,18 +206,23 @@ namespace RW.UI.SnapScrollerPlugin {
         }
 
         #endregion
-        #region  -> CellPositionDelta_FromFirstToLast
+        #region  -> ScrollLengthPixel_FromFirstToLast
 
         /// <summary>
-        /// 從第0個到最後一個cell位置的距離(pixel)
+        /// 從第0個到最後一個cell位置的距離(單位pixel，以資料量和是否loop計算)
         /// </summary>
-        private float cellPositionDelta_FromFirstToLast {
+        private float scrollLengthPixel_FromFirstToLast {
             get {
-
-                if (scrollDirection == ScrollDirection.Horizontal) {
-
-                } else {
-
+                if (ManagerDataCount > 1) {
+                    Vector2 length = 0.5f * cellSize_OnFocus;
+                    int bonusCell = loop ? 1 : 0; //有loop就額外會多一個cell
+                    length += (ManagerDataCount - 1.5f + bonusCell) * cellSize_NotFocus;
+                    length += (ManagerDataCount - 1 + bonusCell) * spacing * Vector2.one;
+                    if (scrollDirection == ScrollDirection.Horizontal) {
+                        return length.x;
+                    } else {
+                        return length.y;
+                    }
                 }
                 return 0;
             }
@@ -397,10 +407,44 @@ namespace RW.UI.SnapScrollerPlugin {
         /// 更新Padding設定
         /// </summary>
         private void UpdateSettingLayoutGroupPadding() {
+            GetActiveCellIndexRange(out int dataIndexStart, out int dataIndexEnd);
+            Vector2 paddingOrigV2 = (parentContainerSize - cellSize_OnFocus) / 2f;
+            float paddingEachCell; //每一個未顯示的cell會造成的額外padding
+            float paddingFirst; //左/上側padding
+            float paddingLast; //右/下側padding
+            float paddingRemainder; //padding餘數
             if (scrollDirection == ScrollDirection.Horizontal) {
-                m_layoutGroup.padding.left = m_layoutGroup.padding.right = (int)((parentContainerSideLength - cellSize_OnFocus.x) / 2f);
+                paddingEachCell = cellSize_NotFocus.x + spacing;
+                paddingFirst = paddingLast = paddingOrigV2.x;
+                if (dataIndexStart != 0) {
+                    //dataIndexStart相當於目前左側(上側)被隱藏的cell數量
+                    //如果數量不是0
+                    paddingFirst += paddingEachCell * dataIndexStart;
+                }
+                int hiddenCellInLast = ManagerDataCount - 1 - dataIndexEnd;
+                if (hiddenCellInLast != 0) {
+                    //如果數量不是0
+                    paddingLast += paddingEachCell * hiddenCellInLast;
+                }
+                m_layoutGroup.padding.left = (int)paddingFirst;
+                paddingRemainder = paddingFirst - (int)paddingFirst;
+                m_layoutGroup.padding.right = (int)(paddingLast + paddingRemainder);
             } else {
-                m_layoutGroup.padding.top = m_layoutGroup.padding.bottom = (int)((parentContainerSideLength - cellSize_OnFocus.y) / 2f);
+                paddingEachCell = cellSize_NotFocus.y + spacing;
+                paddingFirst = paddingLast = paddingOrigV2.y;
+                if (dataIndexStart != 0) {
+                    //dataIndexStart相當於目前左側(上側)被隱藏的cell數量
+                    //如果數量不是0
+                    paddingFirst += paddingEachCell * dataIndexStart;
+                }
+                int hiddenCellInLast = ManagerDataCount - 1 - dataIndexEnd;
+                if (hiddenCellInLast != 0) {
+                    //如果數量不是0
+                    paddingLast += paddingEachCell * hiddenCellInLast;
+                }
+                m_layoutGroup.padding.top = (int)paddingFirst;
+                paddingRemainder = paddingFirst - (int)paddingFirst;
+                m_layoutGroup.padding.bottom = (int)(paddingLast + paddingRemainder);
             }
         }
 
@@ -568,24 +612,24 @@ namespace RW.UI.SnapScrollerPlugin {
         /// </summary>
         public void RefreshData() {
 
-            //處理Cell
-            nowUsingCells.Clear();
-            for (int i = 0; i < manager.datas.Count; i++) {
-                //生成
-                var c = SpawnCell(m_contentRectTrans);
-                //註冊index
-                int j = i;
-                c.SetData(j, manager);
-                //顯示
-                c.gameObject.SetActive(true);
-                //登錄進列表中
-                if (i < nowUsingCells.Count) {
-                    nowUsingCells[i] = c;
-                } else {
-                    nowUsingCells.Add(i, c);
-                }
-            }
-            //RefreshCellsActive();
+            ////處理Cell
+            //nowUsingCells.Clear();
+            //for (int i = 0; i < manager.datas.Count; i++) {
+            //    //生成
+            //    var c = SpawnCell(m_contentRectTrans);
+            //    //註冊index
+            //    int j = i;
+            //    c.SetData(j, manager);
+            //    //顯示
+            //    c.gameObject.SetActive(true);
+            //    //登錄進列表中
+            //    if (i < nowUsingCells.Count) {
+            //        nowUsingCells[i] = c;
+            //    } else {
+            //        nowUsingCells.Add(i, c);
+            //    }
+            //}
+            RefreshCellsActive();
 
         }
 
@@ -656,33 +700,43 @@ namespace RW.UI.SnapScrollerPlugin {
         private void RefreshCellsActive() {
 
             GetActiveCellIndexRange(out int dataIndexStart, out int dataIndexEnd);
-            Debug.Log($"GetActiveCellIndexRange: ( {dataIndexStart}, {dataIndexEnd} )");
-            //for (int i = dataIndexStart; i <= dataIndexEnd; i++) {
-            //    if (!nowUsingCells.ContainsKey(i)) {
-            //        //尚未生成的物件
-            //        //生成
-            //        var c = SpawnCell(m_contentRectTrans);
-            //        //註冊index
-            //        int j = i;
-            //        c.SetData(j, manager);
-            //        //顯示
-            //        c.gameObject.SetActive(true);
-            //        //登錄進列表中
-            //        nowUsingCells[i] = c;
-            //    }
-            //}
-            //foreach (var cell in nowUsingCells) {
-            //    if ((cell.Key < dataIndexStart) || (cell.Key > dataIndexEnd)) {
-            //        //移除Cell，搬移至物件池
-            //        DespawnCell(cell.Value);
-            //        //自列表移除
-            //        nowUsingCells.Remove(cell.Key);
-            //    } else {
-            //        //正常顯示，處理排序
-            //        cell.Value.transform.SetSiblingIndex(cell.Key);
-            //    }
-            //}
+            int siblingIndexOffset = -dataIndexStart; //Content子物件排序編號的偏移值
+            //Debug.Log($"GetActiveCellIndexRange: ( {dataIndexStart}, {dataIndexEnd} )");
+            foreach (var cell in nowUsingCells) {
+                if ((cell.Key < dataIndexStart) || (cell.Key > dataIndexEnd)) {
+                    //移除Cell，搬移至物件池
+                    DespawnCell(cell.Value);
+                    //將需要移除的物件登記至列表
+                    cellIndexesToDespawn.Enqueue(cell.Key);
+                }
+            }
+            //自列表移除
+            int k;
+            while (cellIndexesToDespawn.Count > 0) {
+                k = cellIndexesToDespawn.Dequeue();
+                nowUsingCells.Remove(k);
+            }
+            for (int i = dataIndexStart; i <= dataIndexEnd; i++) {
+                if (!nowUsingCells.ContainsKey(i)) {
+                    //尚未生成的物件
+                    //生成
+                    var c = SpawnCell(m_contentRectTrans);
+                    //註冊index
+                    int j = i;
+                    c.SetData(j, manager);
+                    //顯示
+                    c.gameObject.SetActive(true);
+                    //登錄進列表中
+                    nowUsingCells[i] = c;
+                }
+            }
+            foreach (var cell in nowUsingCells) {
+                //處理排序
+                cell.Value.transform.SetSiblingIndex(cell.Key + siblingIndexOffset);
+            }
 
+            //重新整理大小
+            UpdateDisplay_ResizeCells();
             //重新整理Padding
             UpdateSettingLayoutGroupPadding();
 
@@ -718,13 +772,9 @@ namespace RW.UI.SnapScrollerPlugin {
         /// <param name="distance"></param>
         /// <returns></returns>
         private float PixelDistanceToScrollPositionDelta(float distance) {
-            float contentScrollLength = contentSideLength;
-            if (scrollDirection == ScrollDirection.Horizontal) {
-                contentScrollLength -= m_layoutGroup.padding.left;
-                contentScrollLength -= m_layoutGroup.padding.right;
-            } else {
-                contentScrollLength -= m_layoutGroup.padding.top;
-                contentScrollLength -= m_layoutGroup.padding.bottom;
+            float contentScrollLength = scrollLengthPixel_FromFirstToLast;
+            if (contentScrollLength <= 0) {
+                return 0;
             }
             return distance / contentScrollLength;
         }
