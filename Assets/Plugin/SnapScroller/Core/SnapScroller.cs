@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace RW.UI.SnapScrollerPlugin {
@@ -612,23 +610,6 @@ namespace RW.UI.SnapScrollerPlugin {
         /// </summary>
         public void RefreshData() {
 
-            ////處理Cell
-            //nowUsingCells.Clear();
-            //for (int i = 0; i < manager.datas.Count; i++) {
-            //    //生成
-            //    var c = SpawnCell(m_contentRectTrans);
-            //    //註冊index
-            //    int j = i;
-            //    c.SetData(j, manager);
-            //    //顯示
-            //    c.gameObject.SetActive(true);
-            //    //登錄進列表中
-            //    if (i < nowUsingCells.Count) {
-            //        nowUsingCells[i] = c;
-            //    } else {
-            //        nowUsingCells.Add(i, c);
-            //    }
-            //}
             RefreshCellsActive();
 
         }
@@ -701,7 +682,6 @@ namespace RW.UI.SnapScrollerPlugin {
 
             GetActiveCellIndexRange(out int dataIndexStart, out int dataIndexEnd);
             int siblingIndexOffset = -dataIndexStart; //Content子物件排序編號的偏移值
-            //Debug.Log($"GetActiveCellIndexRange: ( {dataIndexStart}, {dataIndexEnd} )");
             foreach (var cell in nowUsingCells) {
                 if ((cell.Key < dataIndexStart) || (cell.Key > dataIndexEnd)) {
                     //移除Cell，搬移至物件池
