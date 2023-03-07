@@ -14,16 +14,28 @@ namespace RW.UI.SnapScrollerDemo {
             Application.targetFrameRate = 60;
         }
 
+        const int DATACOUNT = 100;
+        const float H = 1f / DATACOUNT;
+
         void Start() {
             scroller.SetManager(manager);
             manager.ClearData();
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < DATACOUNT; i++) {
                 manager.AddData(new MyDemoSnapData() {
                     text = $"Cell {i}",
-                    color = Color.HSVToRGB(i * 0.1f, 0.5f, 0.5f)
+                    color = Color.HSVToRGB(i * H, 0.5f, 0.5f)
                 });
             }
             scroller.RefreshData();
+        }
+
+        private void Update() {
+
+            //ÀË¬dÂ÷¶}Áä
+            if (Input.GetKeyDown(KeyCode.Escape)) {
+                Application.Quit();
+            }
+
         }
     }
 }

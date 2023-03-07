@@ -458,7 +458,6 @@ namespace RW.UI.SnapScrollerPlugin {
             snapScrollerCellTemplate.gameObject.SetActive(false);
 
             //更新Layout
-            UpdateDisplay_ResizeCells();
             UpdateDisplay_SetLayout(onlyLayout: false);
 
             ScrollPosition = 0f;
@@ -470,11 +469,6 @@ namespace RW.UI.SnapScrollerPlugin {
         #region Update
 
         void Update() {
-
-            //檢查離開鍵
-            if (Input.GetKeyDown(KeyCode.Escape)) {
-                Application.Quit();
-            }
 
             if (ManagerDataCount > 1) {
                 //只有資料超過2筆時才作用
@@ -505,14 +499,11 @@ namespace RW.UI.SnapScrollerPlugin {
                         }
                     } else {
                         //放開時的移動
-                        for (int i = 0; i < ManagerDataCount; i++) {
-                            if (IsScrollPosInIndex(i)) {
-                                if (Mathf.Abs(ScrollPosition - GetCellPosition(i)) < 1E-3f) {
-                                    ScrollPosition = GetCellPosition(i);
-                                } else {
-                                    ScrollPosition = Mathf.Lerp(ScrollPosition, GetCellPosition(i), LerpSpeed);
-                                }
-                            }
+                        int nowIndex = ScrollPositionToDataIndex(ScrollPosition);
+                        if (Mathf.Abs(ScrollPosition - GetCellPosition(nowIndex)) < 1E-4f) {
+                            ScrollPosition = GetCellPosition(nowIndex);
+                        } else {
+                            ScrollPosition = Mathf.Lerp(ScrollPosition, GetCellPosition(nowIndex), LerpSpeed);
                         }
                     }
                 }
