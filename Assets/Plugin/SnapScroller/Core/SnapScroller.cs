@@ -505,7 +505,6 @@ namespace RW.UI.SnapScrollerPlugin {
         /// <summary>
         /// 計算縮放大小
         /// </summary>
-        /// <param name="immediately">直接變成目標大小</param>
         private void UpdateDisplay_ResizeCells() {
 
             if (nowUsingCells.Count <= 0) { return; }
