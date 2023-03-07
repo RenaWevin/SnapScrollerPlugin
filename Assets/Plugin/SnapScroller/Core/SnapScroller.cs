@@ -680,6 +680,9 @@ namespace RW.UI.SnapScrollerPlugin {
         /// </summary>
         private void RefreshCellsActive() {
 
+            //檢查是否有任何Cell被spawn/despawn過
+            bool isChangedCells = false;
+
             GetActiveCellIndexRange(out int dataIndexStart, out int dataIndexEnd);
             int siblingIndexOffset = -dataIndexStart; //Content子物件排序編號的偏移值
             foreach (var cell in nowUsingCells) {
@@ -692,10 +695,15 @@ namespace RW.UI.SnapScrollerPlugin {
             }
             //自列表移除
             int k;
+            if (cellIndexesToDespawn.Count > 0) {
+                //修改flag
+                isChangedCells = true;
+            }
             while (cellIndexesToDespawn.Count > 0) {
                 k = cellIndexesToDespawn.Dequeue();
                 nowUsingCells.Remove(k);
             }
+            //新增新的cell
             for (int i = dataIndexStart; i <= dataIndexEnd; i++) {
                 if (!nowUsingCells.ContainsKey(i)) {
                     //尚未生成的物件
@@ -708,6 +716,8 @@ namespace RW.UI.SnapScrollerPlugin {
                     c.gameObject.SetActive(true);
                     //登錄進列表中
                     nowUsingCells[i] = c;
+                    //修改flag
+                    isChangedCells = true;
                 }
             }
             foreach (var cell in nowUsingCells) {
@@ -715,10 +725,12 @@ namespace RW.UI.SnapScrollerPlugin {
                 cell.Value.transform.SetSiblingIndex(cell.Key + siblingIndexOffset);
             }
 
-            //重新整理大小
-            UpdateDisplay_ResizeCells();
-            //重新整理Padding
-            UpdateSettingLayoutGroupPadding();
+            if (isChangedCells) {
+                //重新整理大小
+                UpdateDisplay_ResizeCells();
+                //重新整理Padding
+                UpdateSettingLayoutGroupPadding();
+            }
 
         }
 
