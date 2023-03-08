@@ -621,6 +621,19 @@ namespace RW.UI.SnapScrollerPlugin {
 
         }
 
+        /// <summary>
+        /// Get the cell index which scroller selected now.
+        /// 取得目前Scroller瞄準的CellIndex。
+        /// </summary>
+        /// <returns></returns>
+        public int GetNowSelectedIndex() {
+            int toReturn = nowSelectedIndex;
+            if (!loop) {
+                toReturn = Mathf.Max(0, Mathf.Min(ManagerDataCount - 1, toReturn));
+            }
+            return toReturn;
+        }
+
         #region  -> ScrollTo Series - 自動捲動到指定位置系列
 
         /// <summary>
@@ -893,7 +906,7 @@ namespace RW.UI.SnapScrollerPlugin {
         public int targetIndex = -1;
 
         //目前選擇的按鈕是幾號
-        public int nowSelectedIndex = 0;
+        public int nowSelectedIndex { get; private set; } = 0;
 
         /// <summary>
         /// Check whether scroll position is in range of index.

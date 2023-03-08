@@ -47,7 +47,7 @@ namespace RW.UI.SnapScrollerDemo {
         /// Demo的自訂UI事件。
         /// </summary>
         private void OnClickButton() {
-            if (scroller.nowSelectedIndex == cellIndex) {
+            if (scroller.GetNowSelectedIndex() == cellIndex) {
                 Debug.Log($"Clicked {cellIndex}");
             } else {
                 scroller.ScrollToIndex(cellIndex);
