@@ -14,7 +14,7 @@ namespace RW.UI.SnapScrollerDemo {
             Application.targetFrameRate = 60;
         }
 
-        const int DATACOUNT = 100;
+        const int DATACOUNT = 10;
         const float H = 1f / DATACOUNT;
 
         void Start() {
@@ -27,6 +27,7 @@ namespace RW.UI.SnapScrollerDemo {
                 });
             }
             scroller.RefreshData();
+            scroller.JumpToTop();
         }
 
         private void Update() {
@@ -34,6 +35,12 @@ namespace RW.UI.SnapScrollerDemo {
             //ÀË¬dÂ÷¶}Áä
             if (Input.GetKeyDown(KeyCode.Escape)) {
                 Application.Quit();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Home)) {
+                scroller.ScrollToTop();
+            } else if (Input.GetKeyDown(KeyCode.End)) {
+                scroller.ScrollToBottom();
             }
 
         }

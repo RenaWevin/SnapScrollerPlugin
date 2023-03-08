@@ -621,6 +621,8 @@ namespace RW.UI.SnapScrollerPlugin {
 
         }
 
+        #region  -> ScrollTo Series - 自動捲動到指定位置系列
+
         /// <summary>
         /// Scroll to target cell, 0 means first.
         /// Could be interrupt by any touch.
@@ -629,6 +631,75 @@ namespace RW.UI.SnapScrollerPlugin {
         public void ScrollToIndex(int index) {
             targetIndex = index;
         }
+
+        /// <summary>
+        /// Let scroll rect scroll to top.
+        /// 使ScrollRect自動捲動到頂部。
+        /// </summary>
+        public void ScrollToTop() {
+            ScrollToIndex(0);
+        }
+
+        /// <summary>
+        /// Let scroll rect scroll to bottom.
+        /// 使ScrollRect自動捲動到底部。
+        /// </summary>
+        public void ScrollToBottom() {
+            ScrollToIndex(ManagerDataCount - 1);
+        }
+
+        /// <summary>
+        /// Let scroll rect scroll to left.
+        /// 使ScrollRect自動捲動到最左側。
+        /// </summary>
+        public void ScrollToLeft() {
+            ScrollToIndex(0);
+        }
+
+        /// <summary>
+        /// Let scroll rect scroll to right.
+        /// 使ScrollRect自動捲動到最右側。
+        /// </summary>
+        public void ScrollToRight() {
+            ScrollToIndex(ManagerDataCount - 1);
+        }
+
+        #endregion
+        #region  -> JumpTo Series - 立刻滑到指定位置系列
+
+        /// <summary>
+        /// Let scroll rect scroll to top immediately.
+        /// 使ScrollRect立刻滑到頂部(無動畫)。
+        /// </summary>
+        public void JumpToTop() {
+            ScrollPosition = 0f;
+        }
+
+        /// <summary>
+        /// Let scroll rect scroll to bottom immediately.
+        /// 使ScrollRect立刻滑到底部(無動畫)。
+        /// </summary>
+        public void JumpToBottom() {
+            ScrollPosition = 1f;
+        }
+
+        /// <summary>
+        /// Let scroll rect scroll to left immediately.
+        /// 使ScrollRect立刻滑到最左邊(無動畫)。
+        /// </summary>
+        public void JumpToLeft() {
+            ScrollPosition = 0f;
+        }
+
+        /// <summary>
+        /// Let scroll rect scroll to right immediately.
+        /// 使ScrollRect立刻滑到最右邊(無動畫)。
+        /// </summary>
+        public void JumpToRight() {
+            ScrollPosition = 1f;
+        }
+
+        #endregion
 
         #endregion
 
