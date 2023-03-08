@@ -500,7 +500,15 @@ namespace RW.UI.SnapScrollerPlugin {
                     } else {
                         //放開時的移動
                         int nowIndex = ScrollPositionToDataIndex(ScrollPosition);
-                        if (Mathf.Abs(ScrollPosition - GetCellPosition(nowIndex)) < 1E-4f) {
+                        if (!loop) {
+                            //無loop時位置補正
+                            if (nowIndex < 0) {
+                                nowIndex = 0;
+                            } else if (nowIndex >= ManagerDataCount) {
+                                nowIndex = ManagerDataCount - 1;
+                            }
+                        }
+                        if ((Mathf.Abs(ScrollPosition - GetCellPosition(nowIndex)) < 1E-4f)) {
                             ScrollPosition = GetCellPosition(nowIndex);
                         } else {
                             ScrollPosition = Mathf.Lerp(ScrollPosition, GetCellPosition(nowIndex), LerpSpeed);
@@ -510,7 +518,11 @@ namespace RW.UI.SnapScrollerPlugin {
             }
 
             //取得目前位置
-            nowSelectedIndex = ScrollPositionToDataIndex(ScrollPosition);
+            if (!loop && (ManagerDataCount == 1)) {
+                nowSelectedIndex = 0;
+            } else {
+                nowSelectedIndex = ScrollPositionToDataIndex(ScrollPosition);
+            }
 
             //縮放大小
             UpdateDisplay_ResizeCells();
@@ -551,6 +563,10 @@ namespace RW.UI.SnapScrollerPlugin {
                     if (lerp > (1f - 1E-4f)) {
                         lerp = 1f;
                     } else if (lerp <= 1E-4f) {
+                        lerp = 0f;
+                    }
+                    if ((c.Key == 0) && !loop && (ManagerDataCount == 1)) {
+                        //唯一的例外情況：無loop並且只有1個項目、項目的編號為0時，永遠為Focus
                         lerp = 0f;
                     }
                     switch (cellResizeType) {
@@ -677,7 +693,7 @@ namespace RW.UI.SnapScrollerPlugin {
             GetActiveCellIndexRange(out int dataIndexStart, out int dataIndexEnd);
             int siblingIndexOffset = -dataIndexStart; //Content子物件排序編號的偏移值
             foreach (var cell in nowUsingCells) {
-                if ((cell.Key < dataIndexStart) || (cell.Key > dataIndexEnd)) {
+                if ((ManagerDataCount <= 0) || (cell.Key < dataIndexStart) || (cell.Key > dataIndexEnd)) {
                     //移除Cell，搬移至物件池
                     DespawnCell(cell.Value);
                     //將需要移除的物件登記至列表
@@ -694,26 +710,28 @@ namespace RW.UI.SnapScrollerPlugin {
                 k = cellIndexesToDespawn.Dequeue();
                 nowUsingCells.Remove(k);
             }
-            //新增新的cell
-            for (int i = dataIndexStart; i <= dataIndexEnd; i++) {
-                if (!nowUsingCells.ContainsKey(i)) {
-                    //尚未生成的物件
-                    //生成
-                    var c = SpawnCell(m_contentRectTrans);
-                    //註冊index
-                    int j = i;
-                    c.SetData(j, manager);
-                    //顯示
-                    c.gameObject.SetActive(true);
-                    //登錄進列表中
-                    nowUsingCells[i] = c;
-                    //修改flag
-                    isChangedCells = true;
+            if (ManagerDataCount > 0) {
+                //新增新的cell
+                for (int i = dataIndexStart; i <= dataIndexEnd; i++) {
+                    if (!nowUsingCells.ContainsKey(i)) {
+                        //尚未生成的物件
+                        //生成
+                        var c = SpawnCell(m_contentRectTrans);
+                        //註冊index
+                        int j = i;
+                        c.SetData(j, manager);
+                        //顯示
+                        c.gameObject.SetActive(true);
+                        //登錄進列表中
+                        nowUsingCells[i] = c;
+                        //修改flag
+                        isChangedCells = true;
+                    }
                 }
-            }
-            foreach (var cell in nowUsingCells) {
-                //處理排序
-                cell.Value.transform.SetSiblingIndex(cell.Key + siblingIndexOffset);
+                foreach (var cell in nowUsingCells) {
+                    //處理排序
+                    cell.Value.transform.SetSiblingIndex(cell.Key + siblingIndexOffset);
+                }
             }
 
             if (isChangedCells) {
@@ -744,7 +762,7 @@ namespace RW.UI.SnapScrollerPlugin {
             dataIndexEnd = ScrollPositionToDataIndex(ScrollPosition + distanceToSide);
 
             if (!loop) {
-                dataIndexStart = Mathf.Max(dataIndexStart, 0);
+                dataIndexStart = Mathf.Min(Mathf.Max(dataIndexStart, 0), ManagerDataCount - 1);
                 dataIndexEnd = Mathf.Min(dataIndexEnd, Mathf.Max(ManagerDataCount - 1, 0));
             }
         }
