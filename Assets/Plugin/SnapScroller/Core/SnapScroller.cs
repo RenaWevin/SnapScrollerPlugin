@@ -617,6 +617,9 @@ namespace RW.UI.SnapScrollerPlugin {
         /// </summary>
         public void RefreshData() {
 
+            //需要先將所有cell despawn
+            DespawnAllCells();
+            //然後刷新一次所有cell
             RefreshCellsActive();
 
         }
@@ -760,6 +763,15 @@ namespace RW.UI.SnapScrollerPlugin {
         private void DespawnCell(SnapScrollerCell cell) {
             cellsInPool.Enqueue(cell);
             cell.gameObject.transform.SetParent(cellPoolTransform, false);
+        }
+
+        private void DespawnAllCells() {
+            foreach (var cell in nowUsingCells) {
+                //移除Cell，搬移至物件池
+                DespawnCell(cell.Value);
+            }
+            //清除使用中cell列表
+            nowUsingCells.Clear();
         }
 
         #endregion
