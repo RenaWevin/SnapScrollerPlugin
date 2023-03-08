@@ -13,7 +13,17 @@ namespace RW.UI.SnapScrollerPlugin {
         /// Datas of Scroller.
         /// Scroller的資料。
         /// </summary>
-        public readonly List<ISnapScrollerData> datas = new List<ISnapScrollerData>();
+        private readonly List<ISnapScrollerData> datas = new List<ISnapScrollerData>();
+
+        /// <summary>
+        /// Get count of scroller data.
+        /// 取得Scroller資料的筆數。
+        /// </summary>
+        public int DataCount {
+            get {
+                return datas.Count;
+            }
+        }
 
         /// <summary>
         /// Try to get scroller data, if index is out of range, it will be converted to a right index by offset.
@@ -25,17 +35,17 @@ namespace RW.UI.SnapScrollerPlugin {
         /// 如果資料是空的(0筆)，將會回傳null。</returns>
         public ISnapScrollerData TryGetData(int cellIndex) {
 
-            if (datas.Count <= 0) {
+            if (DataCount <= 0) {
                 return null;
             }
 
             int index = cellIndex;
-            if (cellIndex >= datas.Count) {
-                index = cellIndex % datas.Count;
+            if (cellIndex >= DataCount) {
+                index = cellIndex % DataCount;
             } else if (cellIndex < 0) {
-                index = cellIndex % datas.Count;
+                index = cellIndex % DataCount;
                 if (index < 0) {
-                    index += datas.Count;
+                    index += DataCount;
                 }
             }
             return datas[index];

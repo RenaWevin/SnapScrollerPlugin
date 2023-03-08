@@ -905,15 +905,15 @@ MonoBehaviour:
   scrollDirection: 0
   snapScrollerCellTemplate: {fileID: 1394790963}
   spacing: 50
-  loop: 0
+  loop: 1
   cellResizeType: 2
   cellScaleForOnFocus: {x: 1, y: 1}
   cellScaleForOthers: {x: 0.8, y: 0.8}
   cellSizeForOnFocus: {x: 300, y: 800}
   cellSizeForOthers: {x: 250, y: 550}
-  moveSpeed: 10
+  moveSpeed: 5
+  isAutoScrolling: 0
   targetIndex: -1
-  nowSelectedIndex: 0
 --- !u!114 &1999385879
 MonoBehaviour:
   m_ObjectHideFlags: 0

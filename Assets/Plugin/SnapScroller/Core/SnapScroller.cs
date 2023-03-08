@@ -235,7 +235,7 @@ namespace RW.UI.SnapScrollerPlugin {
         private int ManagerDataCount {
             get {
                 if (manager != null) {
-                    return manager.datas.Count;
+                    return manager.DataCount;
                 }
                 return 0;
             }
@@ -473,26 +473,18 @@ namespace RW.UI.SnapScrollerPlugin {
             if (ManagerDataCount > 1) {
                 //只有資料超過2筆時才作用
 
-                ////測試兩側跳轉，碰到最兩側會換邊
-                //if (ScrollPosition > 1f) {
-                //    ScrollPosition -= 1f;
-                //}
-                //if (ScrollPosition < 0f) {
-                //    ScrollPosition += 1f;
-                //}
-
                 //處理移動
                 if (m_scrollRect.IsDrag) {
-                    targetIndex = -1; //中斷點擊移動
+                    isAutoScrolling = false; //中斷點擊移動
                 } else {
-                    if (targetIndex >= 0) {
+                    if (isAutoScrolling) {
                         //根據點擊的移動
-                        if (targetIndex >= ManagerDataCount) {
-                            targetIndex = -1; //Index錯誤:超過長度
+                        if (!loop && (targetIndex >= ManagerDataCount)) {
+                            isAutoScrolling = false; //Index錯誤:超過長度
                         }
                         if (IsScrollPosInIndex(targetIndex)) {
                             //抵達位置
-                            targetIndex = -1;
+                            isAutoScrolling = false;
                         } else {
                             //移動
                             ScrollPosition = Mathf.Lerp(ScrollPosition, GetCellPosition(targetIndex), LerpSpeed);
@@ -513,6 +505,31 @@ namespace RW.UI.SnapScrollerPlugin {
                         } else {
                             ScrollPosition = Mathf.Lerp(ScrollPosition, GetCellPosition(nowIndex), LerpSpeed);
                         }
+                    }
+                }
+            }
+            //loop位置補正，同時補正自動捲動的位置
+            if (loop && (ManagerDataCount >= 1)) {
+                bool isScrollPosFixed = false;
+                //循環補正ScrollPosition
+                float delta = cellDistance / 2f;
+                if (ScrollPosition > (1f + delta)) {
+                    ScrollPosition -= (1f + cellDistance);
+                    isScrollPosFixed = true;
+                }
+                if (ScrollPosition < (0f - delta)) {
+                    ScrollPosition += (1f + cellDistance);
+                    isScrollPosFixed = true;
+                }
+                //補正自動捲動的位置
+                if (isAutoScrolling && isScrollPosFixed) {
+                    if (targetIndex < 0) {
+                        targetIndex %= ManagerDataCount;
+                        if (targetIndex < 0) {
+                            targetIndex += ManagerDataCount;
+                        }
+                    } else if (targetIndex >= ManagerDataCount) {
+                        targetIndex %= ManagerDataCount;
                     }
                 }
             }
@@ -630,8 +647,20 @@ namespace RW.UI.SnapScrollerPlugin {
         /// </summary>
         /// <returns></returns>
         public int GetNowSelectedIndex() {
+            if (ManagerDataCount <= 1) {
+                return 0;
+            }
             int toReturn = nowSelectedIndex;
-            if (!loop) {
+            if (loop) {
+                if (toReturn < 0) {
+                    toReturn %= ManagerDataCount;
+                    if (toReturn < 0) {
+                        toReturn += ManagerDataCount;
+                    }
+                } else if (toReturn >= ManagerDataCount) {
+                    toReturn %= ManagerDataCount;
+                }
+            } else {
                 toReturn = Mathf.Max(0, Mathf.Min(ManagerDataCount - 1, toReturn));
             }
             return toReturn;
@@ -646,6 +675,7 @@ namespace RW.UI.SnapScrollerPlugin {
         /// </summary>
         public void ScrollToIndex(int index) {
             targetIndex = index;
+            isAutoScrolling = true;
         }
 
         /// <summary>
@@ -915,9 +945,11 @@ namespace RW.UI.SnapScrollerPlugin {
 
         //要移動到的位置
         [Space(50)]
+        public bool isAutoScrolling = false;
         public int targetIndex = -1;
 
         //目前選擇的按鈕是幾號
+        [SerializeField]
         public int nowSelectedIndex { get; private set; } = 0;
 
         /// <summary>
