@@ -10,3 +10,4 @@ A snap type scroller plugin for unity.
   * 稍微拖曳ScrollRect後就會恢復正常
 * 在透過Manager變更Data資料量後，呼叫JumpToTop似乎有可能會造成Cell顯示錯誤
   * 稍微拖曳ScrollRect後就會恢復正常
+* 在loop模式下，只有1個項目會造成顯示不正常
