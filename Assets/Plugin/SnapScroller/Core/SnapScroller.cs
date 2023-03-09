@@ -428,9 +428,12 @@ namespace RW.UI.SnapScrollerPlugin {
                 contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             }
             //設定LayoutGroup
-            HorizontalOrVerticalLayoutGroup layoutGroup = m_layoutGroup = (scrollDirection == ScrollDirection.Horizontal)
-                ? contentInstObj.AddComponent<HorizontalLayoutGroup>()
-                : contentInstObj.AddComponent<VerticalLayoutGroup>();
+            HorizontalOrVerticalLayoutGroup layoutGroup;
+            if (scrollDirection == ScrollDirection.Horizontal) {
+                layoutGroup = m_layoutGroup = contentInstObj.AddComponent<HorizontalLayoutGroup>();
+            } else {
+                layoutGroup = m_layoutGroup = contentInstObj.AddComponent<VerticalLayoutGroup>();
+            }
             layoutGroup.spacing = this.spacing;
             UpdateSettingLayoutGroupPadding();
             layoutGroup.childAlignment = TextAnchor.MiddleCenter;
