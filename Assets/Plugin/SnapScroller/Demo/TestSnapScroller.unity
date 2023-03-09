@@ -905,7 +905,7 @@ MonoBehaviour:
   scrollDirection: 0
   snapScrollerCellTemplate: {fileID: 1394790963}
   spacing: 50
-  loop: 1
+  loop: 0
   cellResizeType: 2
   cellScaleForOnFocus: {x: 1, y: 1}
   cellScaleForOthers: {x: 0.8, y: 0.8}
