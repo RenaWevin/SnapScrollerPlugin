@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace RW.UI.SnapScrollerPlugin {
@@ -268,6 +269,14 @@ namespace RW.UI.SnapScrollerPlugin {
         private int nowSelectedIndex = 0;
 
         #endregion
+        #region  -> Last Selected Index
+
+        /// <summary>
+        /// 上次選擇的編號。
+        /// </summary>
+        private int lastSelectedIndex = 0;
+
+        #endregion
         #region  -> Cell Distance
 
         /// <summary>
@@ -361,6 +370,13 @@ namespace RW.UI.SnapScrollerPlugin {
                 return Mathf.Min(1f, Mathf.Max(0f, moveSpeed * Time.deltaTime));
             }
         }
+
+        /// <summary>
+        /// Will invoke when focused cell is changed.
+        /// 會在選擇的Cell變更時被呼叫。
+        /// </summary>
+        [SerializeField]
+        public UnityEvent<int> onValueChanged;
 
         #endregion
 
@@ -580,6 +596,13 @@ namespace RW.UI.SnapScrollerPlugin {
                 nowSelectedIndex = 0;
             } else {
                 nowSelectedIndex = ScrollPositionToDataIndex(ScrollPosition);
+            }
+            //檢查是否呼叫事件
+            if (lastSelectedIndex != nowSelectedIndex) {
+                if (onValueChanged != null) {
+                    onValueChanged.Invoke(GetNowSelectedIndex());
+                }
+                lastSelectedIndex = nowSelectedIndex;
             }
 
             //縮放大小
