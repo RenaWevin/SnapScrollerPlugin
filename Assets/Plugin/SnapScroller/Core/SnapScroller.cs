@@ -731,6 +731,19 @@ namespace RW.UI.SnapScrollerPlugin {
             return toReturn;
         }
 
+        /// <summary>
+        /// Get the scroll data which scroller selected now.
+        /// 取得目前Scroller瞄準的Cell的資料。
+        /// </summary>
+        /// <returns></returns>
+        public ISnapScrollerData GetNowSelectedData() {
+            if ((manager != null) && ManagerDataCount > 0) {
+                ISnapScrollerData data = manager.TryGetData(GetNowSelectedIndex());
+                return data;
+            }
+            return null;
+        }
+
         #region  -> ScrollTo Series - 自動捲動到指定位置系列
 
         /// <summary>
