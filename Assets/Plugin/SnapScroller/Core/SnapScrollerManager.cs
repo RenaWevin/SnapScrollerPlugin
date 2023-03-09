@@ -1,23 +1,23 @@
-
+ï»¿
 using System.Collections.Generic;
 
 namespace RW.UI.SnapScrollerPlugin {
 
     /// <summary>
     /// Manager of ScrollerData.
-    /// ±MªùºŞ²z ScrollerData ªº Manager class¡C
+    /// å°ˆé–€ç®¡ç† ScrollerData çš„ Manager classã€‚
     /// </summary>
     public class SnapScrollerManager {
 
         /// <summary>
         /// Datas of Scroller.
-        /// Scrollerªº¸ê®Æ¡C
+        /// Scrollerçš„è³‡æ–™ã€‚
         /// </summary>
         private readonly List<ISnapScrollerData> datas = new List<ISnapScrollerData>();
 
         /// <summary>
         /// Get count of scroller data.
-        /// ¨ú±oScroller¸ê®Æªºµ§¼Æ¡C
+        /// å–å¾—Scrollerè³‡æ–™çš„ç­†æ•¸ã€‚
         /// </summary>
         public int DataCount {
             get {
@@ -27,12 +27,12 @@ namespace RW.UI.SnapScrollerPlugin {
 
         /// <summary>
         /// Try to get scroller data, if index is out of range, it will be converted to a right index by offset.
-        /// ¹Á¸Õ¨ú±oScroller¸ê®Æ¡A¦pªGindex¶W¹L¸ê®Æ½d³ò¡A±N·|¥­²¾Âà´«¦¨¥¿½Tªº½d³ò¡C
+        /// å˜—è©¦å–å¾—Scrollerè³‡æ–™ï¼Œå¦‚æœindexè¶…éè³‡æ–™ç¯„åœï¼Œå°‡æœƒå¹³ç§»è½‰æ›æˆæ­£ç¢ºçš„ç¯„åœã€‚
         /// (ex. Range = (0~9), index = -1, output = datas[9])
         /// </summary>
-        /// <param name="cellIndex">Index of cell. Cellªº½s¸¹¡C</param>
+        /// <param name="cellIndex">Index of cell. Cellçš„ç·¨è™Ÿã€‚</param>
         /// <returns>If datas is empty(Count = 0), returns null.
-        /// ¦pªG¸ê®Æ¬OªÅªº(0µ§)¡A±N·|¦^¶Çnull¡C</returns>
+        /// å¦‚æœè³‡æ–™æ˜¯ç©ºçš„(0ç­†)ï¼Œå°‡æœƒå›å‚³nullã€‚</returns>
         public ISnapScrollerData TryGetData(int cellIndex) {
 
             if (DataCount <= 0) {
@@ -54,7 +54,7 @@ namespace RW.UI.SnapScrollerPlugin {
 
         /// <summary>
         /// Clear all data.
-        /// ²M°£©Ò¦³¸ê®Æ¡C
+        /// æ¸…é™¤æ‰€æœ‰è³‡æ–™ã€‚
         /// </summary>
         public void ClearData() {
             datas.Clear();
@@ -62,7 +62,7 @@ namespace RW.UI.SnapScrollerPlugin {
 
         /// <summary>
         /// Add a new data to scroller.
-        /// ·s¼W¤@µ§·sªº¸ê®Æ¨ìScroller¡C
+        /// æ–°å¢ä¸€ç­†æ–°çš„è³‡æ–™åˆ°Scrollerã€‚
         /// </summary>
         /// <param name="data"></param>
         public void AddData(ISnapScrollerData data) {
