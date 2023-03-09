@@ -28,7 +28,7 @@ namespace RW.UI.SnapScrollerPlugin {
         /// 不同的縮放cell方式。
         /// </summary>
         private enum CellResizeType {
-            /// <summary>Doing nothing. 不縮放。</summary>
+            /// <summary>Do nothing. 不縮放。</summary>
             None,
             /// <summary>Resize by scale. 縮放Scale。</summary>
             Scale,
@@ -130,7 +130,8 @@ namespace RW.UI.SnapScrollerPlugin {
         #region  -> ScrollPosition
 
         /// <summary>
-        /// 取得/設定Scroll位置，0:左/上，1:右/下
+        /// Get or Set normalized position of scroll rect.
+        /// 取得/設定Scroll位置，0:左/上，1:右/下。
         /// </summary>
         private float ScrollPosition {
             get {
@@ -184,7 +185,10 @@ namespace RW.UI.SnapScrollerPlugin {
         #endregion
         #region  -> ContentSize
 
-        //Content大小
+        /// <summary>
+        /// RectTransform size of content object.
+        /// Content物件的大小。
+        /// </summary>
         private Vector2 contentSize { get {
                 return m_contentRectTrans.rect.size;
         } }
@@ -238,6 +242,44 @@ namespace RW.UI.SnapScrollerPlugin {
                     return manager.DataCount;
                 }
                 return 0;
+            }
+        }
+
+        #endregion
+        #region  -> AutoScrolling Variables
+
+        /// <summary>
+        /// 是否正在自動捲動。
+        /// </summary>
+        private bool isAutoScrolling = false;
+
+        /// <summary>
+        /// 要移動到的位置。
+        /// </summary>
+        private int targetIndex = -1;
+
+        #endregion
+        #region  -> Now Selected Index
+
+        /// <summary>
+        /// Now selected cell index. (Not fixed)
+        /// 目前選擇的按鈕是幾號。(修正前)
+        /// </summary>
+        private int nowSelectedIndex = 0;
+
+        #endregion
+        #region  -> Cell Distance
+
+        /// <summary>
+        /// 每個cell之間的NormalizedPosition距離(單位是ScrollPosition)
+        /// </summary>
+        private float cellDistance {
+            get {
+                if (ManagerDataCount > 1) {
+                    return 1f / (ManagerDataCount - 1);
+                } else {
+                    return 1f;
+                }
             }
         }
 
@@ -338,10 +380,6 @@ namespace RW.UI.SnapScrollerPlugin {
             InitCellObjectPool();
             InitContent();
             InitCells();
-        }
-
-        private void Start() {
-            
         }
 
         #region  -> InitContent
@@ -552,7 +590,7 @@ namespace RW.UI.SnapScrollerPlugin {
         #region OnScroll
 
         /// <summary>
-        /// 當滑動Scroller時
+        /// 當滑動Scroller時的事件。
         /// </summary>
         private void OnScroll(Vector2 vector2) {
 
@@ -621,7 +659,8 @@ namespace RW.UI.SnapScrollerPlugin {
         #region Public Functions - 外部方法
 
         /// <summary>
-        /// 設定Manager
+        /// Set up a manager for data management.
+        /// 為資料管理設定Manager。
         /// </summary>
         /// <param name="newManager"></param>
         public void SetManager(SnapScrollerManager newManager) {
@@ -808,6 +847,8 @@ namespace RW.UI.SnapScrollerPlugin {
 
         #endregion
 
+        #region RefreshCellsActive - 刷新目前使用中的Cell
+
         /// <summary>
         /// 刷新目前使用中的Cell
         /// </summary>
@@ -869,6 +910,9 @@ namespace RW.UI.SnapScrollerPlugin {
 
         }
 
+        #endregion 
+        #region GetActiveCellIndexRange - 取得會顯示Cell的編號範圍
+
         /// <summary>
         /// 取得會顯示Cell的編號範圍，範圍包括Start與End
         /// </summary>
@@ -893,6 +937,9 @@ namespace RW.UI.SnapScrollerPlugin {
             }
         }
 
+        #endregion
+        #region Convert Variables - 轉換變數方法
+
         /// <summary>
         /// 像素距離轉ScrollPosition距離
         /// </summary>
@@ -915,11 +962,8 @@ namespace RW.UI.SnapScrollerPlugin {
             return Mathf.RoundToInt(pos / cellDistance);
         }
 
-
-        
-
         /// <summary>
-        /// 取得Cell在ScrollPosition中的位置。
+        /// 取得Cell在ScrollPosition中的位置。(NormalizedPosition)
         /// </summary>
         /// <param name="cellIndex"></param>
         /// <returns></returns>
@@ -931,28 +975,6 @@ namespace RW.UI.SnapScrollerPlugin {
         }
 
         /// <summary>
-        /// 每個cell之間的NormalizedPosition距離(單位是ScrollPosition)
-        /// </summary>
-        private float cellDistance {
-            get {
-                if (ManagerDataCount > 1) {
-                    return 1f / (ManagerDataCount - 1);
-                } else {
-                    return 1f;
-                }
-            }
-        }
-
-        //要移動到的位置
-        [Space(50)]
-        public bool isAutoScrolling = false;
-        public int targetIndex = -1;
-
-        //目前選擇的按鈕是幾號
-        [SerializeField]
-        public int nowSelectedIndex { get; private set; } = 0;
-
-        /// <summary>
         /// Check whether scroll position is in range of index.
         /// 確定卷軸位置是否落在指定index的區間範圍內。
         /// </summary>
@@ -960,12 +982,14 @@ namespace RW.UI.SnapScrollerPlugin {
         /// <returns></returns>
         private bool IsScrollPosInIndex(int target) {
             if ((target < 0) || (target >= ManagerDataCount)) {
-                //錯誤
+                //超出範圍，固定返回false
                 return false;
             }
             return (target == ManagerDataCount-1 || (ScrollPosition <= (GetCellPosition(target) + (cellDistance / 2))))
                     && (target == 0 || (ScrollPosition > (GetCellPosition(target) - (cellDistance / 2))));
         }
+
+        #endregion
 
     }
 
