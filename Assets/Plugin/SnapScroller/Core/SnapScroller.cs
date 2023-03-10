@@ -28,7 +28,7 @@ namespace RW.UI.SnapScrollerPlugin {
         /// Resizing methods for cells.
         /// 不同的縮放cell方式。
         /// </summary>
-        private enum CellResizeType {
+        public enum CellResizeType {
             /// <summary>Do nothing. 不縮放。</summary>
             None,
             /// <summary>Resize by scale. 縮放Scale。</summary>
