@@ -1,9 +1,6 @@
 #if UNITY_EDITOR
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.AnimatedValues;
-using UnityEditor.UI;
 using UnityEngine;
 using CellResizeType = RW.UI.SnapScrollerPlugin.SnapScroller.CellResizeType;
 
