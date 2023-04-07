@@ -925,7 +925,7 @@ namespace RW.UI.SnapScrollerPlugin {
                         var c = SpawnCell(m_contentRectTrans);
                         //註冊index
                         int j = i;
-                        c.SetData(j, manager);
+                        c.SetData(j, manager, this);
                         //顯示
                         c.gameObject.SetActive(true);
                         //登錄進列表中

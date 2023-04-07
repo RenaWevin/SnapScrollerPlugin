@@ -17,8 +17,6 @@ namespace RW.UI.SnapScrollerDemo {
         public Button button;
         [SerializeField]
         private Text text;
-        [SerializeField]
-        private SnapScroller scroller;
 
         #endregion
 

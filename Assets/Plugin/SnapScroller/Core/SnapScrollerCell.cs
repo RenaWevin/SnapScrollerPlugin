@@ -36,7 +36,8 @@ namespace RW.UI.SnapScrollerPlugin {
         #endregion
         #region Datas - 資料區
 
-        private SnapScrollerManager manager;
+        protected SnapScrollerManager manager { get; private set; }
+        protected SnapScroller scroller { get; private set; }
         protected int cellIndex;
 
         protected ISnapScrollerData GetData {
@@ -62,9 +63,10 @@ namespace RW.UI.SnapScrollerPlugin {
         /// <summary>
         /// 設定目前Cell的資料
         /// </summary>
-        public void SetData(int index, SnapScrollerManager newManager = null) {
+        public void SetData(int index, SnapScrollerManager newManager = null, SnapScroller newScroller = null) {
             cellIndex = index;
             if (newManager != null) { manager = newManager; }
+            if (newScroller != null) { scroller = newScroller; }
             OnSetData();
         }
 

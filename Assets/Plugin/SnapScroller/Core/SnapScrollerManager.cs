@@ -69,5 +69,25 @@ namespace RW.UI.SnapScrollerPlugin {
             datas.Add(data);
         }
 
+        /// <summary>
+        /// Remove a data by index.
+        /// 根據index移除一筆資料。
+        /// </summary>
+        /// <param name="index"></param>
+        public void RemoveDataAt(int index) {
+            if (DataCount <= 0) { return; }
+            if (index < 0) {
+                int offset = index % DataCount;
+                if (offset == 0) {
+                    index = 0;
+                } else {
+                    index = DataCount + offset;
+                }
+            } else if (index >= DataCount) {
+                index = index % DataCount;
+            }
+            datas.RemoveAt(index);
+        }
+
     }
 }
