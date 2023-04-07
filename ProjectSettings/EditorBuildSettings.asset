@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/TestSnapScroller.unity
+    path: Assets/Plugin/SnapScroller/Demo/TestSnapScroller.unity
     guid: 0f9dcc0bb98a01f44a1bfeb24e0672bd
   m_configObjects: {}
