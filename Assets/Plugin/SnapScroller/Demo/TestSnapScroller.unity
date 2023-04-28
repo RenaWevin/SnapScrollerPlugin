@@ -219,7 +219,7 @@ GameObject:
   - component: {fileID: 91936689}
   - component: {fileID: 91936688}
   m_Layer: 5
-  m_Name: "\u6E96\u661F"
+  m_Name: MarkOfCenter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
