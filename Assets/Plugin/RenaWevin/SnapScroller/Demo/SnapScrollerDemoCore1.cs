@@ -38,7 +38,9 @@ namespace RW.UI.SnapScrollerDemo {
                     Text_SelectedIndex.text = $"Selected dataindex: {a}";
                 }
             });
-            Text_SelectedIndex.text = $"Selected dataindex: {scroller.GetNowSelectedIndex()}";
+            if (Text_SelectedIndex != null) {
+                Text_SelectedIndex.text = $"Selected dataindex: {scroller.GetNowSelectedIndex()}";
+            }
         }
 
         private void Update() {
