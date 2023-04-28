@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace RW.UI.SnapScrollerPlugin {
 
+    [AddComponentMenu("UI/SnapScrollerPlugin/SnapScrollerCell")]
     [RequireComponent(typeof(RectTransform))]
     public class SnapScrollerCell : MonoBehaviour {
 

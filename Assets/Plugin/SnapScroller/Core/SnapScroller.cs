@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 namespace RW.UI.SnapScrollerPlugin {
 
+    [AddComponentMenu("UI/SnapScrollerPlugin/SnapScroller")]
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(ScrollRectWithDragState))]
     public class SnapScroller : MonoBehaviour {
