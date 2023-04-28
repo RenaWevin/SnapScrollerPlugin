@@ -35,9 +35,10 @@ namespace RW.UI.SnapScrollerDemo {
 
             scroller.onValueChanged.AddListener((int a) => {
                 if (Text_SelectedIndex != null) {
-                    Text_SelectedIndex.text = a.ToString();
+                    Text_SelectedIndex.text = $"Selected dataindex: {a}";
                 }
             });
+            Text_SelectedIndex.text = $"Selected dataindex: {scroller.GetNowSelectedIndex()}";
         }
 
         private void Update() {
